@@ -33,10 +33,14 @@
     A2: { box: [30, 30, 30], color: 0xd97706, name: '4040 重型加强角码', mat: '铸铝 L80×80×60 带筋', screws: { B1: 4 } },
     A3: { box: [15, 15, 15], color: 0xfbbf24, name: '2020 标准 L 角码', mat: '铝合金 L20×20×3mm', screws: { B2: 2 } },
     A4: { box: [22, 22, 15], color: 0xfb923c, name: '4040↔2020 转接 L 角码', mat: '转接 L40×20', screws: { B1: 2, B2: 2 } },
+    // U1 = 连车 U 卡扣（夹 M1 底面 + 抱底 OEM 导轨）— 自带螺栓，不进 B1/B2
+    U1: { box: [40, 60, 30], color: 0x10b981, name: '4040 U 卡扣（连车）', mat: '不锈钢 U 夹（抱 OEM 导轨）', screws: {} },
+    // K1 = 水箱 4 角压片（A3 + 弹簧片）— 真实卡子待水箱定型校正
+    K1: { box: [20, 20, 15], color: 0x06b6d4, name: '水箱角压片', mat: 'A3 角码 + 不锈钢弹簧片', screws: { B2: 2 } },
   };
   const FASTENERS = {
     B1: { name: 'M6×16 内六角 + 弹簧 T 螺母 M6', use: '4040 槽用（A1/A2/A4 的 4040 侧）' },
-    B2: { name: 'M5×12 内六角 + 弹簧 T 螺母 M5', use: '2020 槽用（A3/A4 的 2020 侧）' },
+    B2: { name: 'M5×12 内六角 + 弹簧 T 螺母 M5', use: '2020 槽用（A3/A4/K1 的 2020 侧）' },
   };
 
   // 生成全部零件记录（含几何与元数据）。vis = 控制其显隐的开关名（null=常显）。
@@ -181,6 +185,22 @@
     d3Ys.forEach((y, i) => {
       J.push({ id: 'J' + (32 + i), loc: 'D4×D3#' + (i + 1), spec: 'A3', pos: [cx - 10, y, floor], qty: 1 });
     });
+    // ===== U 卡扣连车点 (J42-45) — 4 点抱 OEM 导轨 =====
+    // 位置：M1 底面（左 x=0–40 / 右 x=outerW-40），y 在 OEM 平直支撑段（D8 实测，前后各悬挑 ~150）。
+    // ⚠️ zBot=35 仍是估算（D8 待办），实测后需校正 z 起点；y 同理（不同车 OEM 导轨节点位置略异，装配现场对位）。
+    const usupY = [150 - 30, P.railLength - 150 - 30];  // 卡扣中心 y=150 / railLength-150，marker 长 60mm 居中偏 -30
+    usupY.forEach((y, i) => {
+      J.push({ id: 'J' + (42 + i * 2), loc: '左U卡扣' + (i ? '后' : '前') + '点(连车)', spec: 'U1', pos: [0,          y, 5], qty: 1 });
+      J.push({ id: 'J' + (43 + i * 2), loc: '右U卡扣' + (i ? '后' : '前') + '点(连车)', spec: 'U1', pos: [outerW - 40, y, 5], qty: 1 });
+    });
+    // ===== 水箱 4 角压片 (J46-49) — A3 + 弹簧片压住水箱顶面凸缘 =====
+    // ⚠️ 真实卡子规格待水箱定型校正：水箱可能自带凸缘螺孔/抓握耳，那时换 K1 为对应固定方案。
+    // 简化暂用 A3+弹簧片，位置在水箱 4 角顶面 z=floor+tankH=185（水箱顶 z）。
+    const tankXr = 40 + (outerW - 80) - 20, tankYr = 40 + (P.railLength / 2 - 80) - 20, tankTop = floor + P.tankH;
+    J.push({ id: 'J46', loc: '水箱前左角压片', spec: 'K1', pos: [45,     45,     tankTop], qty: 1 });
+    J.push({ id: 'J47', loc: '水箱前右角压片', spec: 'K1', pos: [tankXr, 45,     tankTop], qty: 1 });
+    J.push({ id: 'J48', loc: '水箱后左角压片', spec: 'K1', pos: [45,     tankYr, tankTop], qty: 1 });
+    J.push({ id: 'J49', loc: '水箱后右角压片', spec: 'K1', pos: [tankXr, tankYr, tankTop], qty: 1 });
     return J;
   }
 
