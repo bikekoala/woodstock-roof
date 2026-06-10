@@ -50,6 +50,7 @@
     <div class="row"><span class="sw" style="background:#e07b39"></span>整体吊装托盘（2020）</div>
     <div class="row"><span class="sw" style="background:#1f3a5f"></span>太阳能板（A/B滑·C下挂·顶板固定）</div>
     <div class="row"><span class="sw" style="background:#37c0e0"></span>水箱（前半托盘内）</div>
+    <div class="row"><span class="sw" style="background:#d97706"></span>角码 A2 重型 / <span class="sw" style="background:#fb923c"></span>A4 转接 / <span class="sw" style="background:#fbbf24"></span>A3 标准（41 节点）</div>
   </div>
   <div class="hint">🖱 拖动旋转 · 滚轮缩放 · 右键平移<br>👉 点击任意零件 / 清单行 查看编号与详情</div>
 </div>
@@ -76,6 +77,7 @@ const P = Object.assign({}, RoofModel.DEFAULTS, {
   showTray:    true,
   showTank:    true,
   showTopPanel:true,
+  showJoints:  true,
 });
 const { P40, zBot } = RoofModel.CONST;
 
@@ -137,7 +139,7 @@ function renderBOM() {
     if (!map.has(k)) map.set(k, { ...d, qty:0 });
     map.get(k).qty++;
   });
-  const order = ['struct','tray','panel','tank'];
+  const order = ['struct','tray','panel','tank','conn'];
   const rows = [...map.values()].sort((a,b)=> order.indexOf(a.cat)-order.indexOf(b.cat) || a.code.localeCompare(b.code));
   let html = '<tr><th>编号</th><th>名称</th><th>截面</th><th>长度</th><th>数量</th></tr>';
   let lastCat = null, totalLen = 0;
@@ -147,14 +149,17 @@ function renderBOM() {
     if (typeof r.length === 'number') totalLen += r.length * r.qty;
     html += `<tr data-code="${r.code}"><td class="code">${r.code}</td><td>${r.name}</td><td>${r.section}</td><td>${L}</td><td>${r.qty}</td></tr>`;
   });
-  // 连接件估算（按接头数）
-  const beams = PARTS.filter(m => ['struct','tray'].includes(m.userData.cat)).length;
-  const angles = Math.round(beams * 1.6);
-  html += `<tr><td colspan="5" class="cat">${CAT.conn}</td></tr>`;
-  [['A1','L型加强角码','40系/20系',angles],
-   ['A2','T型螺母','M8 / M5',angles*2],
-   ['A3','内六角螺栓','M8 / M5',angles*2]]
-   .forEach(([c,n,s,q]) => html += `<tr><td class="code">${c}</td><td>${n}</td><td>${s}</td><td>—</td><td>${q}</td></tr>`);
+  // 紧固件：按节点表精确累加（B1/B2 不画 3D，只在 BOM 出现）
+  const fast = { B1: 0, B2: 0 };
+  PARTS.filter(m => m.userData.cat === 'conn').forEach(m => {
+    const sp = RoofModel.JOINT_SPECS[m.userData.code];
+    if (sp && sp.screws) Object.entries(sp.screws).forEach(([k,v]) => fast[k] += v);
+  });
+  if (fast.B1 || fast.B2) {
+    html += `<tr><td colspan="5" class="cat">紧固件（按节点表精确累加）</td></tr>`;
+    if (fast.B1) html += `<tr><td class="code">B1</td><td>${RoofModel.FASTENERS.B1.name}</td><td>4040 槽</td><td>—</td><td>${fast.B1}</td></tr>`;
+    if (fast.B2) html += `<tr><td class="code">B2</td><td>${RoofModel.FASTENERS.B2.name}</td><td>2020 槽</td><td>—</td><td>${fast.B2}</td></tr>`;
+  }
 
   document.getElementById('bomTable').innerHTML = html;
   document.querySelectorAll('#bom tr[data-code]').forEach(tr =>
@@ -220,6 +225,7 @@ gui.add(P,'showPanelC').name('板C(下挂)').onChange(build);
 gui.add(P,'showTray').name('整体托盘').onChange(build);
 gui.add(P,'showTank').name('水箱').onChange(build);
 gui.add(P,'showTopPanel').name('顶板').onChange(build);
+gui.add(P,'showJoints').name('角码节点').onChange(build);
 
 build();
 function animate(){ requestAnimationFrame(animate); controls.update(); renderer.render(scene,camera); }

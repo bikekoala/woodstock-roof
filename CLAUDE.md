@@ -24,6 +24,7 @@
 - ✅ 结构减脂：M3→2020、加中央吊撑 S2、T2→2020 → decisions.md D12
 - ✅ **托盘边梁 D2 升 4040**（与 M1/C1 同宽同 x），两端直接怼进角立柱 C1（载荷 D2→C1→M1→导轨直传）；D2 够刚遂取消 D1 吊柱 → decisions.md D15。4040 = M1/M2/C1/T1/D2
 - ✅ **前后端中央立柱 S3**（2020×2）封住前后端中线开口，防水箱/置物刹车飞出；T1/T2 维持原规格 → decisions.md D16
+- ✅ **41 个结构连接节点全部登记 + 3D 可见**（角码 A2/A3/A4 共 51 块 + 紧固件 B1×56/B2×78），不再 ×1.6 估算 → decisions.md D17 / docs/joints.md
 - ⏳ zBot（OEM 导轨抬高）未实测
 - ⏳ 未转 Onshape 出可加工模型（带真实 T 槽截面/螺丝）
 
@@ -60,6 +61,7 @@
 | [scripts/check-interference.js](scripts/check-interference.js) | ★ **实体干涉自检**：全行程扫描两两 AABB（非法穿插）+ 竖向承力件**承接检查**（悬空/没接上）→ 退出码 1（pre-commit 阻断）。改完几何务必跑一遍 |
 | [docs/design-spec.md](docs/design-spec.md) | 设计规格（尺寸链、层高、材料分配） |
 | [docs/decisions.md](docs/decisions.md) | **决策记录**——每个选择的"为什么"，避免重走弯路 |
+| [docs/joints.md](docs/joints.md) | ★ **41 个连接节点登记表**（角码/螺丝规格+位置）。转 Onshape 时按本表布置真实标准件，不再做决策 |
 | [docs/bom.md](docs/bom.md) | 材料清单（**自动生成，勿手改**） |
 | reference/旧定稿-v2.md | ⚠️ **已废弃**的早期方案（平托盘/低位水箱），仅作历史参考 |
 
@@ -100,7 +102,9 @@
 | ~~D1~~ | ~~托盘吊柱~~（D15 取消，D2 升 4040 后由立柱顶替） | — |
 | PA/PB/PC/PT | 太阳能板 A/B/C/顶板 | ETFE 柔性板 |
 | WT | 扁平水箱 | 不锈钢 |
-| A1/A2/A3 | L角码/T螺母/螺栓(估算) | 连接件 |
+| A1/A2/A3/A4 | 角码：4040 标准/重型/2020 标准/转接 | 连接件（详见 docs/joints.md）|
+| B1/B2 | 紧固件：M6 套/M5 套（螺丝+T 螺母）| 连接件 |
+| Jxx | 节点编号 J01–J41（仅文档用，不在 3D 渲染）| — |
 
 ## 7. 编辑约定
 

@@ -5,13 +5,13 @@
 
 const fs = require('fs');
 const path = require('path');
-const { buildModel, computeBOM, CAT, DEFAULTS } = require(path.join(__dirname, '..', 'cad', 'model.js'));
+const { buildModel, computeBOM, CAT, DEFAULTS, JOINT_SPECS, FASTENERS } = require(path.join(__dirname, '..', 'cad', 'model.js'));
 
 const P = DEFAULTS;
 const parts = buildModel(P);
-const { items, angles } = computeBOM(parts);
+const { items, fasteners, jointsCount } = computeBOM(parts);
 
-const order = ['struct', 'tray', 'panel', 'tank'];
+const order = ['struct', 'tray', 'panel', 'tank', 'conn'];
 const byCat = {};
 items.forEach(it => { (byCat[it.cat] = byCat[it.cat] || []).push(it); });
 
@@ -53,13 +53,12 @@ const totalAl = Object.entries(lenByProfile)
   .filter(([k]) => k.includes('铝型材')).reduce((s, [, v]) => s + v, 0);
 md += `- **铝型材合计**：约 **${(totalAl / 1000).toFixed(2)} m**（下单按 6m 原料 + 定长切割，留 ~10% 余量）\n\n`;
 
-md += `## 连接件（估算，按接头数 ×1.6）\n\n`;
-md += `| 编号 | 名称 | 规格 | 数量(估) |\n|---|---|---|---|\n`;
-md += `| A1 | L 型加强角码 | 40系 / 20系 | ~${angles} |\n`;
-md += `| A2 | T 型螺母 | M8 / M5 | ~${angles * 2} |\n`;
-md += `| A3 | 内六角螺栓 | M8 / M5 | ~${angles * 2} |\n\n`;
-md += `> 关键接头（8 个箱角、连车 U 卡扣点、**托盘四角 D2↔立柱 C1**、D1 吊柱接顶框 T1、S2 接顶框/托盘）用**加强型铸铝角码**；4040 配 M8/8mm 槽，2020 配 M5/6mm 槽。\n`;
-md += `> 托盘承托：四角经 D2 坐落立柱 C1（→M1→导轨直传，兜水箱前两角）+ 中段两侧 D1 吊顶框 + 中心 S1/S2。见 docs/decisions.md D14。\n\n`;
+md += `## 紧固件（按节点表精确累加，不再 ×1.6 估算）\n\n`;
+md += `> 共 **${jointsCount}** 个结构连接节点（详见 [joints.md](joints.md)）。每节点的角码型号与所配紧固件如下汇总。\n\n`;
+md += `| 编号 | 名称 | 适用槽 | 数量 |\n|---|---|---|---|\n`;
+if (fasteners.B1) md += `| B1 | ${FASTENERS.B1.name} | 4040 | ${fasteners.B1} 套 |\n`;
+if (fasteners.B2) md += `| B2 | ${FASTENERS.B2.name} | 2020 | ${fasteners.B2} 套 |\n`;
+md += `\n> 紧固件 = 螺丝 + T 螺母配对。每个节点的具体角码型号 / 螺丝数见 [joints.md](joints.md)；4040 节点（A1/A2/A4 的 4040 侧）配 B1，2020 节点（A3/A4 的 2020 侧）配 B2。\n\n`;
 
 md += `## 其它（未计入参数化模型）\n\n`;
 md += `- 1515 V-slot 滑轨 + V 轮组（伸缩层，待选型）\n`;

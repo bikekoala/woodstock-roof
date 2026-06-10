@@ -19,7 +19,25 @@
   // 调色板
   const COLOR = { frame: 0x4a90d9, tray: 0xe07b39, panel: 0x1f3a5f, tank: 0x37c0e0 };
   // 类别中文名
-  const CAT = { struct: '箱体骨架 4040', tray: '吊装托盘', panel: '太阳能板', tank: '水箱', conn: '连接件（估算）' };
+  const CAT = { struct: '箱体骨架 4040', tray: '吊装托盘', panel: '太阳能板', tank: '水箱', conn: '连接件 角码（按节点登记 docs/joints.md）' };
+
+  // ===== 连接节点（角码）型号字典 — 见 docs/joints.md =====
+  // box  = 3D 标识方块外接尺寸（mm，BOM 与 3D 一致）。简化呈现：每节点 1 块方块代表角码位置，
+  //        颜色按规格区分；BOM 数量按规格聚合，紧固件按每节点 screws 累加。真实角码 L 形/带筋外形
+  //        留到转 Onshape 阶段用厂商 STEP 替换。
+  // screws = 该规格每块角码需要的紧固件数（B1 = M6 套，B2 = M5 套）。
+  // box = 3D 标识方块尺寸（mm）：缩小至原角码 ~40-50%，避免遮挡型材结构；尺寸差仍可一眼分辨型号
+  //       A2 重型最大(30)、A1/A4 中(22)、A3 最小(15)。真实角码 L 形/带筋外形留到转 Onshape 用厂商 STEP 替换。
+  const JOINT_SPECS = {
+    A1: { box: [22, 22, 22], color: 0xf59e0b, name: '4040 标准 L 角码', mat: '铝合金 L40×40×3.5mm', screws: { B1: 2 } },
+    A2: { box: [30, 30, 30], color: 0xd97706, name: '4040 重型加强角码', mat: '铸铝 L80×80×60 带筋', screws: { B1: 4 } },
+    A3: { box: [15, 15, 15], color: 0xfbbf24, name: '2020 标准 L 角码', mat: '铝合金 L20×20×3mm', screws: { B2: 2 } },
+    A4: { box: [22, 22, 15], color: 0xfb923c, name: '4040↔2020 转接 L 角码', mat: '转接 L40×20', screws: { B1: 2, B2: 2 } },
+  };
+  const FASTENERS = {
+    B1: { name: 'M6×16 内六角 + 弹簧 T 螺母 M6', use: '4040 槽用（A1/A2/A4 的 4040 侧）' },
+    B2: { name: 'M5×12 内六角 + 弹簧 T 螺母 M5', use: '2020 槽用（A3/A4 的 2020 侧）' },
+  };
 
   // 生成全部零件记录（含几何与元数据）。vis = 控制其显隐的开关名（null=常显）。
   function buildModel(opts) {
@@ -87,22 +105,105 @@
     B('showTopPanel', 'PT', '顶板(固定)', 'ETFE 柔性板', '1000×' + (P.railLength / 2 - 60), '—', 'panel',
       1000, P.railLength / 2 - 60, 8, xc, 40, zTop1, COLOR.panel, 0.95);
 
+    // ===== 连接节点（角码 marker）— 节点表见 docs/joints.md =====
+    buildJoints(P).forEach(j => {
+      const s = JOINT_SPECS[j.spec];
+      const [w, d, h] = s.box;
+      for (let k = 0; k < j.qty; k++) {
+        // qty=2 节点的 2 块沿 x 错开 25mm，视觉对称可辨；不动 BOM 件数
+        const dx = j.qty > 1 ? (k === 0 ? -12 : 12) : 0;
+        parts.push({
+          vis: 'showJoints', code: j.spec, name: s.name, profile: '角码', section: s.mat,
+          length: '—', cat: 'conn',
+          xw: w, yd: d, zh: h,
+          x: j.pos[0] + dx, y: j.pos[1], z: j.pos[2],
+          color: s.color, opacity: 0.92,
+          joint: j.id, loc: j.loc,
+        });
+      }
+    });
+
     return parts;
   }
 
-  // 按编号聚合 + 连接件估算（浏览器与 Node 共用）
+  // 节点定义（41 项；详见 docs/joints.md）— pos = 角码 marker 的最小角点 (x,y,z)
+  function buildJoints(P) {
+    const outerW = P.railSpacing, cx = outerW / 2;
+    const zBotTop = zBot + P40;
+    const zTop0 = zBotTop + P.boxHeight;
+    const floor = zTop0 - P.tankH;
+    const yMid = P.railLength / 2;
+    // D3 五根的 y（与 buildModel 内 D3 几何一致）
+    const d3Ys = [40, P.railLength * 0.25 - P20 / 2, yMid - P20 / 2, P.railLength * 0.75 - P20 / 2, P.railLength - P20];
+    const J = [
+      // 底框 4 角 (A2 重型, C1↔M1↔M2 三件汇合)
+      { id: 'J01', loc: '底框左前角(C1↔M1↔M2)', spec: 'A2', pos: [0,           0,                  zBotTop], qty: 1 },
+      { id: 'J02', loc: '底框右前角',             spec: 'A2', pos: [outerW - 60, 0,                  zBotTop], qty: 1 },
+      { id: 'J03', loc: '底框左后角',             spec: 'A2', pos: [0,           P.railLength - 60,  zBotTop], qty: 1 },
+      { id: 'J04', loc: '底框右后角',             spec: 'A2', pos: [outerW - 60, P.railLength - 60,  zBotTop], qty: 1 },
+      // M3 端接 M2 横梁中点 (A4 转接)
+      { id: 'J05', loc: 'M3前端接M2', spec: 'A4', pos: [cx - 20, 0,                  zBotTop - 20], qty: 1 },
+      { id: 'J06', loc: 'M3后端接M2', spec: 'A4', pos: [cx - 20, P.railLength - 40,  zBotTop - 20], qty: 1 },
+      // S1 底 (A3 ×2, 接 M2/M3)
+      { id: 'J07', loc: 'S1前底接M2/M3', spec: 'A3', pos: [cx - 10, 20,                  zBotTop], qty: 2 },
+      { id: 'J08', loc: 'S1后底接M2/M3', spec: 'A3', pos: [cx - 10, P.railLength - 40,    zBotTop], qty: 2 },
+      // 顶框 4 角 (A2 重型, C1↔T1↔T2)
+      { id: 'J09', loc: '顶框左前角(C1↔T1↔T2)', spec: 'A2', pos: [0,           0,                  zTop0 - 20], qty: 1 },
+      { id: 'J10', loc: '顶框右前角',             spec: 'A2', pos: [outerW - 60, 0,                  zTop0 - 20], qty: 1 },
+      { id: 'J11', loc: '顶框左后角',             spec: 'A2', pos: [0,           P.railLength - 60,  zTop0 - 20], qty: 1 },
+      { id: 'J12', loc: '顶框右后角',             spec: 'A2', pos: [outerW - 60, P.railLength - 60,  zTop0 - 20], qty: 1 },
+      // T2 中横梁端接 T1 (A4 转接)
+      { id: 'J13', loc: 'T2中横L端接T1', spec: 'A4', pos: [20,          yMid - 10, zTop0 + 20], qty: 1 },
+      { id: 'J14', loc: 'T2中横R端接T1', spec: 'A4', pos: [outerW - 60, yMid - 10, zTop0 + 20], qty: 1 },
+      // S2 顶 + S3 前后顶 (A3 ×2, 接 T2)
+      { id: 'J15', loc: 'S2顶接T2中横',  spec: 'A3', pos: [cx - 10, yMid - 10,           zTop0 + 20], qty: 2 },
+      { id: 'J16', loc: 'S3前顶接T2前横', spec: 'A3', pos: [cx - 10, 20,                  zTop0 + 20], qty: 2 },
+      { id: 'J17', loc: 'S3后顶接T2后横', spec: 'A3', pos: [cx - 10, P.railLength - 40,    zTop0 + 20], qty: 2 },
+      // D2 怼 C1 (A2 关键承力, D15 决策)
+      { id: 'J18', loc: 'D2左前怼C1', spec: 'A2', pos: [0,           40,                 floor], qty: 1 },
+      { id: 'J19', loc: 'D2左后怼C1', spec: 'A2', pos: [0,           P.railLength - 100, floor], qty: 1 },
+      { id: 'J20', loc: 'D2右前怼C1', spec: 'A2', pos: [outerW - 60, 40,                 floor], qty: 1 },
+      { id: 'J21', loc: 'D2右后怼C1', spec: 'A2', pos: [outerW - 60, P.railLength - 100, floor], qty: 1 },
+      // S1 顶 / S2 底 / S3 前后底 (A3 ×2, 接 D4)
+      { id: 'J37', loc: 'S1前顶接D4', spec: 'A3', pos: [cx - 10, 20,                 floor],      qty: 2 },
+      { id: 'J38', loc: 'S1后顶接D4', spec: 'A3', pos: [cx - 10, P.railLength - 40,   floor],      qty: 2 },
+      { id: 'J39', loc: 'S2底接D4中', spec: 'A3', pos: [cx - 10, yMid - 10,           floor + 20], qty: 2 },
+      { id: 'J40', loc: 'S3前底接D4', spec: 'A3', pos: [cx - 10, 20,                 floor + 20], qty: 2 },
+      { id: 'J41', loc: 'S3后底接D4', spec: 'A3', pos: [cx - 10, P.railLength - 40,   floor + 20], qty: 2 },
+    ];
+    // D3×D2 (J22-31)：5 根 × 两端；第一/末根沿 D3 轴往内偏 20mm 避开 D2 端 A2
+    d3Ys.forEach((y, i) => {
+      const off = (i === 0) ? 25 : (i === 4 ? -25 : 0);
+      J.push({ id: 'J' + (22 + i * 2), loc: 'D3#' + (i + 1) + '×D2L', spec: 'A3', pos: [40,           y + off, floor], qty: 1 });
+      J.push({ id: 'J' + (23 + i * 2), loc: 'D3#' + (i + 1) + '×D2R', spec: 'A3', pos: [outerW - 60,  y + off, floor], qty: 1 });
+    });
+    // D4×D3 (J32-36)：5 处十字，D4 与每根 D3 中点交汇
+    d3Ys.forEach((y, i) => {
+      J.push({ id: 'J' + (32 + i), loc: 'D4×D3#' + (i + 1), spec: 'A3', pos: [cx - 10, y, floor], qty: 1 });
+    });
+    return J;
+  }
+
+  // 按编号聚合 + 紧固件按节点精确累加（浏览器与 Node 共用）
   function computeBOM(parts) {
     const map = new Map();
     parts.forEach(p => {
       if (!map.has(p.code)) map.set(p.code, Object.assign({}, p, { qty: 0 }));
       map.get(p.code).qty++;
     });
-    const beams = parts.filter(p => p.cat === 'struct' || p.cat === 'tray').length;
-    const angles = Math.round(beams * 1.6);
-    return { items: [...map.values()], angles };
+    // 紧固件：扫每个 conn 件按其规格的 screws 累加（精确数，不再 ×1.6 估算）
+    const fasteners = { B1: 0, B2: 0 };
+    parts.filter(p => p.cat === 'conn').forEach(p => {
+      const sp = JOINT_SPECS[p.code];
+      if (sp && sp.screws) Object.entries(sp.screws).forEach(([k, v]) => { fasteners[k] = (fasteners[k] || 0) + v; });
+    });
+    // 不同节点数（按 joint id 去重）
+    const jointSet = new Set();
+    parts.filter(p => p.cat === 'conn' && p.joint).forEach(p => jointSet.add(p.joint));
+    return { items: [...map.values()], fasteners, jointsCount: jointSet.size };
   }
 
-  const api = { DEFAULTS, CONST: { P40, P20, panelW, panelL, zBot }, COLOR, CAT, buildModel, computeBOM };
+  const api = { DEFAULTS, CONST: { P40, P20, panelW, panelL, zBot }, COLOR, CAT, JOINT_SPECS, FASTENERS, buildModel, buildJoints, computeBOM };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.RoofModel = api;
 })(typeof globalThis !== 'undefined' ? globalThis : this);
