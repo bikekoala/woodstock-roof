@@ -1,0 +1,10 @@
+# macOS
+.DS_Store
+
+# 编辑器
+.vscode/
+.idea/
+*.swp
+
+# Node（如以后引入依赖）
+node_modules/

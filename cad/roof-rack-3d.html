@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>车顶太阳能平台 — 3D 预览（方案A·加固版）</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; overflow: hidden; font-family: -apple-system, "PingFang SC", sans-serif; }
+  #app { width: 100vw; height: 100vh; display: block; }
+  .panel {
+    position: fixed; z-index: 10; background: rgba(20,22,28,.85); color: #e8eaed;
+    border-radius: 10px; backdrop-filter: blur(6px);
+  }
+  #info { top: 12px; left: 12px; padding: 12px 14px; font-size: 12.5px; line-height: 1.65; max-width: 300px; }
+  #info h1 { font-size: 14px; margin-bottom: 5px; }
+  #info .row { display: flex; align-items: center; gap: 7px; margin: 2px 0; }
+  #info .sw { width: 13px; height: 13px; border-radius: 3px; flex: none; }
+  #info .hint { margin-top: 8px; color: #9aa0a6; font-size: 11.5px; }
+
+  #bom { left: 12px; bottom: 12px; width: 360px; max-height: 56vh; display: flex; flex-direction: column; }
+  #bom h2 { font-size: 13px; padding: 10px 12px 6px; }
+  #bom .scroll { overflow-y: auto; padding: 0 8px 8px; }
+  #bom table { width: 100%; border-collapse: collapse; font-size: 11.5px; }
+  #bom th { color: #9aa0a6; font-weight: 500; text-align: left; padding: 4px 6px; position: sticky; top: 0; background: #1a1d24; }
+  #bom td { padding: 4px 6px; border-top: 1px solid #2a2e38; }
+  #bom tr[data-code] { cursor: pointer; }
+  #bom tr[data-code]:hover { background: rgba(255,255,255,.05); }
+  #bom tr.active { background: rgba(255,174,0,.18); }
+  #bom .code { color: #ffd479; font-weight: 600; }
+  #bom .cat { color: #7fb3e0; font-size: 10.5px; padding: 6px 6px 2px; }
+  #bom .sum { padding: 7px 12px; font-size: 11.5px; color: #9aa0a6; border-top: 1px solid #2a2e38; }
+  #bom .sum b { color: #ffd479; }
+
+  #detail { right: 12px; bottom: 12px; width: 270px; padding: 12px 14px; font-size: 12.5px; }
+  #detail h2 { font-size: 14px; margin-bottom: 8px; color: #ffd479; }
+  #detail .kv { display: flex; justify-content: space-between; padding: 3px 0; border-bottom: 1px solid #2a2e38; }
+  #detail .kv span { color: #9aa0a6; }
+  #detail .empty { color: #9aa0a6; }
+</style>
+</head>
+<body>
+<canvas id="app"></canvas>
+
+<div id="info" class="panel">
+  <h1>车顶太阳能平台 · 方案A（加固版）</h1>
+  <div>立方体箱体，顶框+立柱升 4040，顶部加斜撑。</div>
+  <div style="margin-top:7px">
+    <div class="row"><span class="sw" style="background:#4a90d9"></span>箱体骨架 4040（底框+立柱+顶框+中支撑）</div>
+    <div class="row"><span class="sw" style="background:#e07b39"></span>整体吊装托盘（2020 + 中支撑4040）</div>
+    <div class="row"><span class="sw" style="background:#1f3a5f"></span>太阳能板（A/B滑·C下挂·顶板固定）</div>
+    <div class="row"><span class="sw" style="background:#37c0e0"></span>水箱（前半托盘内）</div>
+  </div>
+  <div class="hint">🖱 拖动旋转 · 滚轮缩放 · 右键平移<br>👉 点击任意零件 / 清单行 查看编号与详情</div>
+</div>
+
+<div id="bom" class="panel">
+  <h2>材料清单 BOM</h2>
+  <div class="scroll"><table id="bomTable"></table></div>
+  <div class="sum" id="bomSum"></div>
+</div>
+
+<div id="detail" class="panel">
+  <div class="empty">点击 3D 中的零件，或左侧清单某一行，查看其编号、材料、尺寸、长度。</div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/dat.gui@0.7.9/build/dat.gui.min.js"></script>
+<script src="model.js"></script>
+<script>
+// ---------- 参数（mm）----------
+const P = {
+  railSpacing: 1000,
+  railLength:  1200,
+  boxHeight:   110,
+  panelTravel: 1000,
+  deploy:      0.0,
+  tankH:       70,
+  showSliding: true,
+  showPanelC:  true,
+  showTray:    true,
+  showTank:    true,
+  showTopPanel:true,
+};
+const P40 = 40, P20 = 20;
+const panelW = 1000, panelL = 1200;
+const zBot = 35;
+
+// ---------- 场景 ----------
+const canvas = document.getElementById('app');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+renderer.setPixelRatio(window.devicePixelRatio);
+renderer.setSize(window.innerWidth, window.innerHeight);
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x12141a);
+
+const camera = new THREE.PerspectiveCamera(45, window.innerWidth/window.innerHeight, 1, 20000);
+camera.position.set(2200, 1800, 2600);
+const controls = new THREE.OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.target.set(540, 130, 600);
+
+scene.add(new THREE.AmbientLight(0xffffff, 0.55));
+const dir = new THREE.DirectionalLight(0xffffff, 0.9); dir.position.set(1500,2500,1800); scene.add(dir);
+const dir2 = new THREE.DirectionalLight(0xffffff, 0.35); dir2.position.set(-1200,800,-1000); scene.add(dir2);
+const grid = new THREE.GridHelper(4000, 40, 0x394050, 0x262b36); grid.position.set(540,0,600); scene.add(grid);
+scene.add(new THREE.AxesHelper(300));
+
+// ---------- 零件登记 ----------
+let group = new THREE.Group(); scene.add(group);
+let PARTS = [];
+
+function addBeam(xw, yd, zh, xmin, ymin, zmin, color, md, opacity) {
+  const mat = new THREE.MeshStandardMaterial({ color, metalness:0.4, roughness:0.55,
+    transparent:(opacity??1)<1, opacity:opacity??1 });
+  const geo = new THREE.BoxGeometry(xw, zh, yd);
+  const m = new THREE.Mesh(geo, mat);
+  m.position.set(xmin+xw/2, zmin+zh/2, ymin+yd/2);
+  m.userData = md; group.add(m); PARTS.push(m);
+  const e = new THREE.LineSegments(new THREE.EdgesGeometry(geo),
+    new THREE.LineBasicMaterial({ color:0x000000, transparent:true, opacity:0.22 }));
+  e.position.copy(m.position); group.add(e);
+}
+
+// ---------- 构建（零件全部来自 model.js 单一数据源）----------
+function build() {
+  scene.remove(group); group = new THREE.Group(); scene.add(group); PARTS = [];
+  RoofModel.buildModel(P).forEach(p => {
+    if (p.vis && !P[p.vis]) return;                 // 按开关显隐
+    addBeam(p.xw, p.yd, p.zh, p.x, p.y, p.z, p.color,
+      { code:p.code, name:p.name, profile:p.profile, section:p.section, length:p.length, cat:p.cat },
+      p.opacity);
+  });
+  renderBOM(); updateDims();
+  if (curCode) highlight(curCode);
+}
+
+// ---------- BOM ----------
+const CAT = RoofModel.CAT;
+function renderBOM() {
+  const map = new Map();
+  PARTS.forEach(m => {
+    const d = m.userData, k = d.code;
+    if (!map.has(k)) map.set(k, { ...d, qty:0 });
+    map.get(k).qty++;
+  });
+  const order = ['struct','tray','panel','tank'];
+  const rows = [...map.values()].sort((a,b)=> order.indexOf(a.cat)-order.indexOf(b.cat) || a.code.localeCompare(b.code));
+  let html = '<tr><th>编号</th><th>名称</th><th>截面</th><th>长度</th><th>数量</th></tr>';
+  let lastCat = null, totalLen = 0;
+  rows.forEach(r => {
+    if (r.cat !== lastCat) { html += `<tr><td colspan="5" class="cat">${CAT[r.cat]||r.cat}</td></tr>`; lastCat = r.cat; }
+    const L = typeof r.length === 'number' ? r.length+' mm' : '—';
+    if (typeof r.length === 'number') totalLen += r.length * r.qty;
+    html += `<tr data-code="${r.code}"><td class="code">${r.code}</td><td>${r.name}</td><td>${r.section}</td><td>${L}</td><td>${r.qty}</td></tr>`;
+  });
+  // 连接件估算（按接头数）
+  const beams = PARTS.filter(m => ['struct','tray'].includes(m.userData.cat)).length;
+  const angles = Math.round(beams * 1.6);
+  html += `<tr><td colspan="5" class="cat">${CAT.conn}</td></tr>`;
+  [['A1','L型加强角码','40系/20系',angles],
+   ['A2','T型螺母','M8 / M5',angles*2],
+   ['A3','内六角螺栓','M8 / M5',angles*2]]
+   .forEach(([c,n,s,q]) => html += `<tr><td class="code">${c}</td><td>${n}</td><td>${s}</td><td>—</td><td>${q}</td></tr>`);
+
+  document.getElementById('bomTable').innerHTML = html;
+  document.querySelectorAll('#bom tr[data-code]').forEach(tr =>
+    tr.onclick = () => { const d = [...map.values()].find(x=>x.code===tr.dataset.code); highlight(d.code); showDetail(d); });
+  document.getElementById('bomSum').innerHTML =
+    `型材总长 ≈ <b>${(totalLen/1000).toFixed(2)}</b> m · 零件种类 <b>${map.size}</b> · 总件数 <b>${PARTS.length}</b>`;
+}
+
+function showDetail(d) {
+  const L = typeof d.length === 'number' ? d.length+' mm' : '—';
+  document.getElementById('detail').innerHTML =
+    `<h2>${d.code} · ${d.name}</h2>
+     <div class="kv"><span>类别</span><b>${CAT[d.cat]||d.cat}</b></div>
+     <div class="kv"><span>材料</span><b>${d.profile}</b></div>
+     <div class="kv"><span>截面</span><b>${d.section} mm</b></div>
+     <div class="kv"><span>单根长度</span><b>${L}</b></div>
+     <div class="kv"><span>本编号数量</span><b>${d.qty ?? '—'} 件</b></div>`;
+}
+
+let curCode = null;
+function highlight(code) {
+  curCode = code;
+  PARTS.forEach(m => m.material.emissive && m.material.emissive.setHex(m.userData.code===code ? 0xffae00 : 0x000000));
+  document.querySelectorAll('#bom tr[data-code]').forEach(tr => tr.classList.toggle('active', tr.dataset.code===code));
+}
+
+function updateDims() {
+  const outerW = P.railSpacing + 2*P40;
+  const deployedW = outerW + 2*P.panelTravel;
+  const totalH = zBot + P40 + P.boxHeight + P40 + 8;
+  document.getElementById('info').querySelector('div').innerHTML =
+    `箱体 ${outerW}×${P.railLength}×${zBot+P40+P.boxHeight+P40} mm｜展开宽 ${deployedW} mm` +
+    (totalH>200 ? `<br><span style="color:#e0a06b">总高 ${totalH}mm 略超20cm（方案A·水箱顶层+4040顶框所致）</span>` : '');
+}
+
+// ---------- 点击拾取 ----------
+const raycaster = new THREE.Raycaster(), mouse = new THREE.Vector2();
+let downX=0, downY=0;
+renderer.domElement.addEventListener('pointerdown', e => { downX=e.clientX; downY=e.clientY; });
+renderer.domElement.addEventListener('pointerup', e => {
+  if (Math.abs(e.clientX-downX)>5 || Math.abs(e.clientY-downY)>5) return; // 拖动不算点击
+  mouse.x = (e.clientX/window.innerWidth)*2-1;
+  mouse.y = -(e.clientY/window.innerHeight)*2+1;
+  raycaster.setFromCamera(mouse, camera);
+  const hits = raycaster.intersectObjects(PARTS, false);
+  if (hits.length) {
+    const d = hits[0].object.userData;
+    const qty = PARTS.filter(m=>m.userData.code===d.code).length;
+    highlight(d.code); showDetail({ ...d, qty });
+  }
+});
+
+// ---------- GUI ----------
+const gui = new dat.GUI({ width: 250 });
+gui.add(P,'railSpacing',800,1300,10).name('导轨中心距').onChange(build);
+gui.add(P,'railLength',1000,1500,10).name('纵梁长').onChange(build);
+gui.add(P,'boxHeight',60,180,5).name('箱体内净高').onChange(build);
+gui.add(P,'panelTravel',500,1200,10).name('单侧行程').onChange(build);
+gui.add(P,'deploy',0,1,0.01).name('展开程度').onChange(build);
+gui.add(P,'tankH',40,100,5).name('水箱/托盘深').onChange(build);
+gui.add(P,'showSliding').name('滑板A/B').onChange(build);
+gui.add(P,'showPanelC').name('板C(下挂)').onChange(build);
+gui.add(P,'showTray').name('整体托盘').onChange(build);
+gui.add(P,'showTank').name('水箱').onChange(build);
+gui.add(P,'showTopPanel').name('顶板').onChange(build);
+
+build();
+function animate(){ requestAnimationFrame(animate); controls.update(); renderer.render(scene,camera); }
+animate();
+window.addEventListener('resize', () => {
+  camera.aspect = window.innerWidth/window.innerHeight;
+  camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight);
+});
+</script>
+</body>
+</html>
