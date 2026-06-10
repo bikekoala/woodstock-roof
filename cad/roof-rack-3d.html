@@ -44,10 +44,10 @@
 
 <div id="info" class="panel">
   <h1>车顶太阳能平台 · 方案A（加固版）</h1>
-  <div>立方体箱体，顶框+立柱升 4040，顶部加斜撑。</div>
+  <div>立方体箱体；承力主梁(底框纵横梁+立柱+顶框纵梁)用 4040，中脊/竖撑/顶框横梁用 2020，无斜撑靠角码抗侧倾。</div>
   <div style="margin-top:7px">
-    <div class="row"><span class="sw" style="background:#4a90d9"></span>箱体骨架 4040（底框+立柱+顶框+中支撑）</div>
-    <div class="row"><span class="sw" style="background:#e07b39"></span>整体吊装托盘（2020 + 中支撑4040）</div>
+    <div class="row"><span class="sw" style="background:#4a90d9"></span>箱体骨架（4040 主梁 + 2020 中脊/竖撑 S1/S2）</div>
+    <div class="row"><span class="sw" style="background:#e07b39"></span>整体吊装托盘（2020）</div>
     <div class="row"><span class="sw" style="background:#1f3a5f"></span>太阳能板（A/B滑·C下挂·顶板固定）</div>
     <div class="row"><span class="sw" style="background:#37c0e0"></span>水箱（前半托盘内）</div>
   </div>
@@ -69,23 +69,15 @@
 <script src="https://cdn.jsdelivr.net/npm/dat.gui@0.7.9/build/dat.gui.min.js"></script>
 <script src="model.js"></script>
 <script>
-// ---------- 参数（mm）----------
-const P = {
-  railSpacing: 1000,
-  railLength:  1200,
-  boxHeight:   110,
-  panelTravel: 1000,
-  deploy:      0.0,
-  tankH:       70,
+// ---------- 参数（mm）：尺寸默认值引用 model.js 单一数据源，此处只追加显示开关 ----------
+const P = Object.assign({}, RoofModel.DEFAULTS, {
   showSliding: true,
   showPanelC:  true,
   showTray:    true,
   showTank:    true,
   showTopPanel:true,
-};
-const P40 = 40, P20 = 20;
-const panelW = 1000, panelL = 1200;
-const zBot = 35;
+});
+const { P40, zBot } = RoofModel.CONST;
 
 // ---------- 场景 ----------
 const canvas = document.getElementById('app');
@@ -190,7 +182,7 @@ function highlight(code) {
 }
 
 function updateDims() {
-  const outerW = P.railSpacing + 2*P40;
+  const outerW = P.railSpacing;            // railSpacing 即箱体总外宽
   const deployedW = outerW + 2*P.panelTravel;
   const totalH = zBot + P40 + P.boxHeight + P40 + 8;
   document.getElementById('info').querySelector('div').innerHTML =
@@ -217,7 +209,7 @@ renderer.domElement.addEventListener('pointerup', e => {
 
 // ---------- GUI ----------
 const gui = new dat.GUI({ width: 250 });
-gui.add(P,'railSpacing',800,1300,10).name('导轨中心距').onChange(build);
+gui.add(P,'railSpacing',800,1300,10).name('箱体总外宽').onChange(build);
 gui.add(P,'railLength',1000,1500,10).name('纵梁长').onChange(build);
 gui.add(P,'boxHeight',60,180,5).name('箱体内净高').onChange(build);
 gui.add(P,'panelTravel',500,1200,10).name('单侧行程').onChange(build);
