@@ -22,7 +22,7 @@
   // 调色板（panelExt 用稍浅色区分延展板）
   const COLOR = { frame: 0x4a90d9, tray: 0xe07b39, panel: 0x1f3a5f, panelExt: 0x3b5f8a, tank: 0x37c0e0, slide: 0x6b7280, hinge: 0x10b981 };
   // 类别中文名
-  const CAT = { struct: '箱体骨架 4040', tray: '吊装托盘', panel: '太阳能板', tank: '水箱', slide: '滑轨/合页', conn: '连接件 角码（按节点登记 docs/joints.md）', motor: '电动接口（D22）' };
+  const CAT = { struct: '箱体骨架 4040', tray: '吊装托盘', panel: '太阳能板', tank: '水箱', slide: '滑轨/合页', conn: '连接件 角码（按节点登记 design/joints.md）', motor: '电动接口（D22）' };
 
   // ===== 连接节点（角码）型号字典 — 见 docs/joints.md =====
   // box  = 3D 标识方块外接尺寸（mm，BOM 与 3D 一致）。简化呈现：每节点 1 块方块代表角码位置，

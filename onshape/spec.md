@@ -2,9 +2,9 @@
 
 > ⚙️ **本文件由 `scripts/gen-onshape-spec.js` 从 `cad/model.js` 自动生成，请勿手改。**
 > 改设计 → 改 model.js → `node scripts/gen-onshape-spec.js` 重生成此文档。
-> 同时输出 `docs/onshape-spec.json` 供 Phase 2 FeatureScript 生成器使用。
+> 同时输出 `onshape/spec.json` 供 Phase 2 FeatureScript 生成器使用。
 >
-> 配套来源：commit `7862a57` · 生成日期 2026-06-11
+> 配套来源：commit `677ec60` · 生成日期 2026-06-11
 
 ## 总览
 
@@ -428,7 +428,7 @@
 
 ## 6. 下一步（Phase 2）
 
-我会写一段 **Onshape FeatureScript** 代码（基于 `docs/onshape-spec.json`）：
+我会写一段 **Onshape FeatureScript** 代码（基于 `onshape/spec.json`）：
 - 输入：本 JSON
 - 输出：自动生成所有 §2 型材的 Part Studio
 - 你只需在 Onshape Custom Feature 里粘贴 FS 代码 + 选 JSON → 一键生成骨架

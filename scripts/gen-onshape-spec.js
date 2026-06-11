@@ -3,8 +3,8 @@
 // 从 cad/model.js 自动生成 Onshape 建模指南（人读 Markdown + 机读 JSON）
 //
 // 输出：
-//   docs/onshape-spec.md   — 人读：建模顺序 / Mate 表 / 采购清单
-//   docs/onshape-spec.json — 机读：给 Phase 2 FeatureScript 生成器吃
+//   onshape/spec.md   — 人读：建模顺序 / Mate 表 / 采购清单
+//   onshape/spec.json — 机读：给 Phase 2 FeatureScript 生成器吃
 //
 // 用法：node scripts/gen-onshape-spec.js
 //
@@ -108,7 +108,7 @@ const spec = {
   },
 };
 
-fs.writeFileSync(path.join(__dirname, '..', 'docs', 'onshape-spec.json'), JSON.stringify(spec, null, 2));
+fs.writeFileSync(path.join(__dirname, '..', 'onshape', 'spec.json'), JSON.stringify(spec, null, 2));
 
 // ============================================================
 // 4. 输出 Markdown（人读，照着搭 Onshape）
@@ -173,7 +173,7 @@ const md = `# Onshape 建模工程描述
 
 > ⚙️ **本文件由 \`scripts/gen-onshape-spec.js\` 从 \`cad/model.js\` 自动生成，请勿手改。**
 > 改设计 → 改 model.js → \`node scripts/gen-onshape-spec.js\` 重生成此文档。
-> 同时输出 \`docs/onshape-spec.json\` 供 Phase 2 FeatureScript 生成器使用。
+> 同时输出 \`onshape/spec.json\` 供 Phase 2 FeatureScript 生成器使用。
 >
 > 配套来源：commit \`${spec.scriptVersion}\` · 生成日期 ${dt}
 
@@ -269,7 +269,7 @@ ${md_shopping(spec.shoppingList)}
 
 ## 6. 下一步（Phase 2）
 
-我会写一段 **Onshape FeatureScript** 代码（基于 \`docs/onshape-spec.json\`）：
+我会写一段 **Onshape FeatureScript** 代码（基于 \`onshape/spec.json\`）：
 - 输入：本 JSON
 - 输出：自动生成所有 §2 型材的 Part Studio
 - 你只需在 Onshape Custom Feature 里粘贴 FS 代码 + 选 JSON → 一键生成骨架
@@ -280,7 +280,7 @@ ${md_shopping(spec.shoppingList)}
 - ✅ 跟我说"准备好了"，我开始写 FeatureScript
 `;
 
-fs.writeFileSync(path.join(__dirname, '..', 'docs', 'onshape-spec.md'), md);
+fs.writeFileSync(path.join(__dirname, '..', 'onshape', 'spec.md'), md);
 
-console.log(`[gen-onshape-spec] docs/onshape-spec.md + docs/onshape-spec.json 已更新`);
+console.log(`[gen-onshape-spec] onshape/spec.md + onshape/spec.json 已更新`);
 console.log(`  零件 ${spec.totals.parts} 件 / 型材实例 ${spec.totals.extrusions} / 节点 ${spec.totals.joints} / 型材 ${(spec.totals.profileLen_mm / 1000).toFixed(2)}m`);

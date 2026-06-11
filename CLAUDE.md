@@ -24,7 +24,7 @@
 - ✅ 结构减脂：M3→2020、加中央吊撑 S2、T2→2020 → decisions.md D12
 - ✅ **托盘边梁 D2 升 4040**（与 M1/C1 同宽同 x），两端直接怼进角立柱 C1（载荷 D2→C1→M1→导轨直传）；D2 够刚遂取消 D1 吊柱 → decisions.md D15。4040 = M1/M2/C1/T1/D2
 - ✅ **前后端中央立柱 S3**（2020×2）封住前后端中线开口，防水箱/置物刹车飞出；T1/T2 维持原规格 → decisions.md D16
-- ✅ **41 个结构连接节点全部登记 + 3D 可见**（角码 A2/A3/A4 共 51 块 + 紧固件 B1×56/B2×78），不再 ×1.6 估算 → decisions.md D17 / docs/joints.md
+- ✅ **41 个结构连接节点全部登记 + 3D 可见**（角码 A2/A3/A4 共 51 块 + 紧固件 B1×56/B2×78），不再 ×1.6 估算 → decisions.md D17 / design/joints.md
 - ✅ **补 U 卡扣 4 点（U1）+ 水箱 4 角压片（K1）共 8 节点**（占位，待 zBot 实测 + 水箱定型校正）→ decisions.md D18。1515 滑轨锚点拒做（等 V 轮选型）
 - ✅ **太阳能板选型 + 板 A 双层折叠 + 取消板 B + 电动接口**（D19/D20/D21/D22）：240W 1120×1000 ETFE 板，主板 ETFE+3mm 铝塑、延展板 ETFE+5mm 蜂窝铝；单侧二次展开形成 2.24㎡ 侧边帐；ESP32 + 同步带电机 + 推杆 + OBD 联锁；boxHeight 110→130，总高 225→253mm
 - ✅ **拆 M3 + D2 降 2020 + D1 中段吊柱复活**（D24，推翻 D15）：D2 改 2020 贴 C1 内侧用 A4 转接、中段 D1 ×2 减半跨度（挠度 ~1mm）；4040 总长 -2.44m，**净减重 ~3.4kg**
@@ -54,28 +54,62 @@
 - **中央纵梁脊**（M3 底、D4 托盘）+ **中央竖撑 S1** 托住跨度中点，替代斜撑。
 - **连接**：T 槽 + L 型加强角码 + T 螺母 + 螺栓。
 
-## 4. 关键文件
+## 4. 仓库结构 + 关键文件
+
+```
+.
+├── README.md             ← GitHub 首页门面
+├── CLAUDE.md             ← 你在这（AI agent 上手指南）
+│
+├── design/               ← 设计文档（人读为主）
+│   ├── README.md         ← 文档导航
+│   ├── spec.md           ← 设计规格
+│   ├── decisions.md      ← 决策记录 D1–D24
+│   ├── joints.md         ← 59 个连接节点登记
+│   └── bom.md            ← 物料清单（自动）
+│
+├── onshape/              ← ★ 主预览/装配平台
+│   ├── README.md         ← Onshape 使用指南
+│   ├── spec.md           ← 建模工程描述（自动）
+│   └── spec.json         ← 机读 spec（自动）
+│
+├── cad/                  ← Three.js 快速试错沙盒（次要）
+│   ├── README.md         ← 定位说明
+│   ├── model.js          ← ★ 单一数据源
+│   └── roof-rack-3d.html ← 浏览器交互预览
+│
+└── scripts/              ← 自动化工具（三个都挂 pre-commit）
+    ├── check-interference.js
+    ├── gen-bom.js
+    └── gen-onshape-spec.js
+```
 
 | 路径 | 作用 |
 |---|---|
-| [cad/model.js](cad/model.js) | ★ **零件单一数据源**（几何+BOM 元数据）。浏览器与 Node 共用。**改零件只改这里。** |
-| [cad/roof-rack-3d.html](cad/roof-rack-3d.html) | **主交互模型**。浏览器打开；拖动旋转、滚轮缩放、右键平移；右上滑块改尺寸联动；左下 BOM；点零件看详情。Three.js(CDN)，无需构建。零件来自 model.js。 |
-| [scripts/gen-bom.js](scripts/gen-bom.js) | 从 model.js 自动生成 docs/bom.md（git commit 时由 pre-commit 钩子自动跑） |
-| [scripts/gen-onshape-spec.js](scripts/gen-onshape-spec.js) | ★ **Onshape 自动化 Phase 1**：从 model.js 输出 docs/onshape-spec.md（人读建模指南）+ docs/onshape-spec.json（机读 FeatureScript 输入）。pre-commit 自动跑 |
-| [docs/onshape-spec.md](docs/onshape-spec.md) | Onshape 建模工程描述（自动生成）—— 主控参数 / 型材清单 / Mate 表 / 采购清单 / 建模顺序 |
-| [docs/onshape-spec.json](docs/onshape-spec.json) | 同上的机器可读版（给 Phase 2 FeatureScript 生成器吃）|
-| [scripts/check-interference.js](scripts/check-interference.js) | ★ **实体干涉自检**：全行程扫描两两 AABB（非法穿插）+ 竖向承力件**承接检查**（悬空/没接上）→ 退出码 1（pre-commit 阻断）。改完几何务必跑一遍 |
-| [docs/design-spec.md](docs/design-spec.md) | 设计规格（尺寸链、层高、材料分配） |
-| [docs/decisions.md](docs/decisions.md) | **决策记录**——每个选择的"为什么"，避免重走弯路 |
-| [docs/joints.md](docs/joints.md) | ★ **41 个连接节点登记表**（角码/螺丝规格+位置）。转 Onshape 时按本表布置真实标准件，不再做决策 |
-| [docs/bom.md](docs/bom.md) | 材料清单（**自动生成，勿手改**） |
-| reference/旧定稿-v2.md | ⚠️ **已废弃**的早期方案（平托盘/低位水箱），仅作历史参考 |
+| [cad/model.js](cad/model.js) | ★ **单一数据源**（几何+BOM 元数据）。浏览器与 Node 共用。**改零件只改这里。** |
+| [cad/roof-rack-3d.html](cad/roof-rack-3d.html) | **Three.js 快速试错沙盒**（参数推敲、跑干涉）。浏览器打开；滑块改尺寸；点零件看详情。 |
+| [onshape/spec.md](onshape/spec.md) | ★ **Onshape 建模指南**（自动）：参数 / 型材清单 / Mate 表 / 采购单 / 建模顺序 — 装配/出图主战场 |
+| [onshape/spec.json](onshape/spec.json) | Onshape spec 机读版（给 Phase 2 FeatureScript 吃） |
+| [design/spec.md](design/spec.md) | 设计规格（尺寸链、层高、材料分配） |
+| [design/decisions.md](design/decisions.md) | **决策记录**——每个选择的"为什么"，避免重走弯路 |
+| [design/joints.md](design/joints.md) | ★ **59 个连接节点登记表**（角码/螺丝规格+位置）|
+| [design/bom.md](design/bom.md) | 材料清单（**自动生成，勿手改**） |
+| [scripts/check-interference.js](scripts/check-interference.js) | ★ **实体干涉自检**：全行程扫描 AABB + 承接检查 → 退出码 1（pre-commit 阻断）|
+| [scripts/gen-bom.js](scripts/gen-bom.js) | 从 model.js 重算 design/bom.md |
+| [scripts/gen-onshape-spec.js](scripts/gen-onshape-spec.js) | 从 model.js 重算 onshape/spec.md + spec.json |
+| reference/旧定稿-v2.md | ⚠️ **已废弃**的早期方案（仅历史参考） |
+
+### 主预览平台是 Onshape（重要）
+
+- **Three.js (cad/) = 快速试错**：改尺寸看冲突、跑全行程干涉自检
+- **Onshape (onshape/) = 装配级真件**：真实标准件、Mate 约束、重心、加工图
+- 工作流：先在 cad/ 改 model.js → 满意 → 在 Onshape 同步刷新（Phase 2 后一键自动）→ Onshape 出图
 
 ### 数据自动同步（重要）
 - **唯一数据源 = `cad/model.js`**。零件的几何与 BOM 都从它来。
-- 改零件 → 改 `model.js` → HTML 刷新即更新；`docs/bom.md` 由 `node scripts/gen-bom.js` 重算（**git commit 时 pre-commit 钩子自动执行并加入提交**）。
-- 调过参数想让 BOM 反映：把新值写进 `model.js` 的 `DEFAULTS`（滑块改的是运行时，不落盘）。
-- **每次改了设计/model.js，agent 应同步更新 design-spec.md / decisions.md / CLAUDE.md 相关处**，别让文档漂移。
+- 改零件 → 改 `model.js` → HTML 刷新即更新；`design/bom.md` 和 `onshape/spec.*` 都由 pre-commit 自动重算。
+- 调过参数想让 BOM/spec 反映：把新值写进 `model.js` 的 `DEFAULTS`（滑块改的是运行时，不落盘）。
+- **每次改了设计/model.js，agent 应同步更新 design/spec.md / design/decisions.md / CLAUDE.md 相关处**，别让文档漂移。
 
 ## 5. 主控参数（model.js 的 `DEFAULTS`，HTML 启动时引用）
 
@@ -111,7 +145,7 @@
 | ~~PB~~ | ~~太阳能板 B~~ | D21 取消（副驾侧不展开）|
 | PC/PT | 太阳能板 C 下挂 / 顶板固定 | ETFE+铝塑 6mm 复合 |
 | WT | 扁平水箱 | 不锈钢 |
-| A1/A2/A3/A4 | 角码：4040 标准/重型/2020 标准/转接 | 连接件（详见 docs/joints.md）|
+| A1/A2/A3/A4 | 角码：4040 标准/重型/2020 标准/转接 | 连接件（详见 design/joints.md）|
 | U1 | 4040 U 卡扣（连车，抱 OEM 导轨）| 连车件 |
 | K1 | 水箱角压片（A3+弹簧片）| 水箱固定 |
 | **R1** | 扁装三节滑轨 1m 全伸（D20 板 A 滑出）| 钢制 27×12.7×1000 ×2 根 |

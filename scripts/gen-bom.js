@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// scripts/gen-bom.js — 由 cad/model.js 自动生成 docs/bom.md
+// scripts/gen-bom.js — 由 cad/model.js 自动生成 design/bom.md
 // 单一数据源：改 model.js → 运行本脚本（或 git commit 自动触发）→ bom.md 同步。
 // 用法：node scripts/gen-bom.js
 
@@ -66,5 +66,5 @@ md += `- 驱动：齿轮齿条+减速电机（A/B）、12V 笔式推杆（C）\n
 md += `- U 型卡扣夹具 ×4（连 OEM 导轨）\n`;
 md += `- 控制：ESP32 + 驱动板 + 限位（复用 Woodstock）\n`;
 
-fs.writeFileSync(path.join(__dirname, '..', 'docs', 'bom.md'), md);
-console.log(`[gen-bom] docs/bom.md 已更新（${items.length} 个编号，铝型材 ${(totalAl / 1000).toFixed(2)} m）`);
+fs.writeFileSync(path.join(__dirname, '..', 'design', 'bom.md'), md);
+console.log(`[gen-bom] design/bom.md 已更新（${items.length} 个编号，铝型材 ${(totalAl / 1000).toFixed(2)} m）`);
