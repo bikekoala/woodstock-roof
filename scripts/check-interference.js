@@ -67,8 +67,8 @@ joints.sort((x, y) => y.pen - x.pen);
 // 竖向承力件的承力端必须与被接构件有"面积接触"（>0 投影重叠），仅棱边/缝隙都算未接。
 //   TOP_BEARING：顶端要顶在上方构件底面（吊柱挂顶框、立柱接顶框、竖撑接托盘）。
 //   BOT_BEARING：底端要坐在下方构件顶面（立柱坐底框、竖撑坐底框/托盘）。D1 底端是与边梁 D2 的并接（角码），故不查底。
-const TOP_BEARING = { C1: 1, S1: 1, S2: 1, S3: 1 };
-const BOT_BEARING = { C1: 1, S1: 1, S2: 1, S3: 1 };
+const TOP_BEARING = { C1: 1, S1: 1, S2: 1, S3: 1, D1: 1 };
+const BOT_BEARING = { C1: 1, S1: 1, S2: 1, S3: 1, D1: 1 };
 const parts0 = buildModel({ deploy: 0 }).filter(p => p.cat !== 'conn');
 const areaXY = (a, b) => (Math.min(a.x + a.xw, b.x + b.xw) - Math.max(a.x, b.x) > EPS)
   && (Math.min(a.y + a.yd, b.y + b.yd) - Math.max(a.y, b.y) > EPS);

@@ -73,7 +73,7 @@
     B(null, 'M1', '底框纵梁', '4040 铝型材', '40×40', P.railLength, 'struct', P40, P.railLength, P40, outerW - P40, 0, zBot, COLOR.frame);
     B(null, 'M2', '底框横梁', '4040 铝型材', '40×40', gap, 'struct', gap, P40, P40, P40, 0, zBot, COLOR.frame);
     B(null, 'M2', '底框横梁', '4040 铝型材', '40×40', gap, 'struct', gap, P40, P40, P40, P.railLength - P40, zBot, COLOR.frame);
-    B(null, 'M3', '底框中央纵梁', '2020 铝型材', '20×20', P.railLength, 'struct', P20, P.railLength, P20, outerW / 2 - P20 / 2, 0, zBot + (P40 - P20), COLOR.frame); // 降 2020：不在水箱承重路上，仅中脊/抗扭（D12），顶面齐平 z=75
+    // M3 已拆（D24）— 底框抗扭由 M1/M2 4040 口字框承担；板 C 滑轨改 M1 底面双轨，不需中线锚点
     // ----- 角立柱 4040 -----
     [[0, 0], [outerW - P40, 0], [0, P.railLength - P40], [outerW - P40, P.railLength - P40]].forEach(([x, y]) =>
       B(null, 'C1', '角立柱', '4040 铝型材', '40×40', P.boxHeight, 'struct', P40, P40, P.boxHeight, x, y, zBotTop, COLOR.frame));
@@ -134,14 +134,18 @@
     // 折叠时合页在主板外端（朝主驾外的 x 方向）；滑出+翻折时合页位置随板移动
     B('showSliding', 'K2', '钢琴合页 SS304 1120mm', 'SS304 钢琴合页', '—', panelL, 'slide',
       6, panelL, hingeH, xc + slideX - 3, paY, zHinge, COLOR.hinge, 0.95);
-    // ----- 整体托盘：边梁 D2 升 4040，与 M1/C1 同规格、同 x 平面（x0–40 / outerW−40），两端直接怼进前后角立柱 C1。
-    //   托盘载荷 D2 → C1 → M1 → 导轨 直传（这才是"接到 C1"）。D2 跨两立柱(1220) 4040 自身够刚(跨中垂~1mm)，
-    //   故原中段吊柱 D1 由立柱顶替、取消（与上次误删不同：那时 D2 还是细 2020 需 D1 兜）。详见 docs/decisions.md D15。
+    // ----- 整体托盘：D24 推翻 D15。D2 降回 2020、贴 C1 内侧（x=20-40 / x=980-1000），
+    //   两端用 A4 转接角码接 C1；中段 y=650 加 D1 吊柱（左右各一根 2020），跨度从 1220 减半到 610，
+    //   D2 跨中挠度 ~1mm（vs 2020 单跨 1220 16mm）。减重 2.1kg。
     const yMid = P.railLength / 2 - P20 / 2;
-    const d2Len = P.railLength - 2 * P40;             // D2 在前后两立柱之间对接（1220）
-    const gap2 = outerW - 2 * P40;                    // 托盘内净宽 = 两 D2 内侧之间（940）
-    B('showTray', 'D2', '托盘纵向边梁', '4040 铝型材', '40×40', d2Len, 'tray', P40, d2Len, P40, 0, P40, floor, COLOR.tray);
-    B('showTray', 'D2', '托盘纵向边梁', '4040 铝型材', '40×40', d2Len, 'tray', P40, d2Len, P40, outerW - P40, P40, floor, COLOR.tray);
+    const d2Len = P.railLength - 2 * P40;             // D2 长度仍 1220（C1 间）
+    const gap2 = outerW - 2 * P40;                    // 托盘内净宽 940（D2 内侧间 40 到 980）
+    B('showTray', 'D2', '托盘纵向边梁', '2020 铝型材', '20×20', d2Len, 'tray', P20, d2Len, P20, P20,             P40, floor, COLOR.tray);
+    B('showTray', 'D2', '托盘纵向边梁', '2020 铝型材', '20×20', d2Len, 'tray', P20, d2Len, P20, outerW - 2 * P20, P40, floor, COLOR.tray);
+    // D1 中段吊柱（D24）— 从 D2 顶面 z=floor+P20 升到 T1 底面 z=zTop0，左右各一根，y=中段
+    const d1H = zTop0 - (floor + P20);
+    B('showTray', 'D1', '托盘中段吊柱', '2020 铝型材', '20×20', d1H, 'tray', P20, P20, d1H, P20,             yMid, floor + P20, COLOR.tray);
+    B('showTray', 'D1', '托盘中段吊柱', '2020 铝型材', '20×20', d1H, 'tray', P20, P20, d1H, outerW - 2 * P20, yMid, floor + P20, COLOR.tray);
     [0, P.railLength * 0.25 - P20 / 2, yMid, P.railLength * 0.75 - P20 / 2, P.railLength - P20].forEach(y =>
       B('showTray', 'D3', '托盘承托横档', '2020 铝型材', '20×20', gap2, 'tray', gap2, P20, P20, P40, y, floor, COLOR.tray));
     B('showTray', 'D4', '托盘中央纵梁', '2020 铝型材', '20×20', P.railLength, 'tray', P20, P.railLength, P20, outerW / 2 - P20 / 2, 0, floor, COLOR.tray);
@@ -190,12 +194,10 @@
       { id: 'J02', loc: '底框右前角',             spec: 'A2', pos: [outerW - 60, 0,                  zBotTop], qty: 1 },
       { id: 'J03', loc: '底框左后角',             spec: 'A2', pos: [0,           P.railLength - 60,  zBotTop], qty: 1 },
       { id: 'J04', loc: '底框右后角',             spec: 'A2', pos: [outerW - 60, P.railLength - 60,  zBotTop], qty: 1 },
-      // M3 端接 M2 横梁中点 (A4 转接)
-      { id: 'J05', loc: 'M3前端接M2', spec: 'A4', pos: [cx - 20, 0,                  zBotTop - 20], qty: 1 },
-      { id: 'J06', loc: 'M3后端接M2', spec: 'A4', pos: [cx - 20, P.railLength - 40,  zBotTop - 20], qty: 1 },
-      // S1 底 (A3 ×2, 接 M2/M3)
-      { id: 'J07', loc: 'S1前底接M2/M3', spec: 'A3', pos: [cx - 10, 20,                  zBotTop], qty: 2 },
-      { id: 'J08', loc: 'S1后底接M2/M3', spec: 'A3', pos: [cx - 10, P.railLength - 40,    zBotTop], qty: 2 },
+      // J05/J06 (M3 端接 M2) 已删 — M3 拆除（D24）
+      // S1 底 (A3 ×2, 接 M2) — D24 后 M3 拆除，S1 仅接 M2
+      { id: 'J07', loc: 'S1前底接M2', spec: 'A3', pos: [cx - 10, 20,                  zBotTop], qty: 2 },
+      { id: 'J08', loc: 'S1后底接M2', spec: 'A3', pos: [cx - 10, P.railLength - 40,    zBotTop], qty: 2 },
       // 顶框 4 角 (A2 重型, C1↔T1↔T2)
       { id: 'J09', loc: '顶框左前角(C1↔T1↔T2)', spec: 'A2', pos: [0,           0,                  zTop0 - 20], qty: 1 },
       { id: 'J10', loc: '顶框右前角',             spec: 'A2', pos: [outerW - 60, 0,                  zTop0 - 20], qty: 1 },
@@ -208,11 +210,16 @@
       { id: 'J15', loc: 'S2顶接T2中横',  spec: 'A3', pos: [cx - 10, yMid - 10,           zTop0 + 20], qty: 2 },
       { id: 'J16', loc: 'S3前顶接T2前横', spec: 'A3', pos: [cx - 10, 20,                  zTop0 + 20], qty: 2 },
       { id: 'J17', loc: 'S3后顶接T2后横', spec: 'A3', pos: [cx - 10, P.railLength - 40,    zTop0 + 20], qty: 2 },
-      // D2 怼 C1 (A2 关键承力, D15 决策)
-      { id: 'J18', loc: 'D2左前怼C1', spec: 'A2', pos: [0,           40,                 floor], qty: 1 },
-      { id: 'J19', loc: 'D2左后怼C1', spec: 'A2', pos: [0,           P.railLength - 100, floor], qty: 1 },
-      { id: 'J20', loc: 'D2右前怼C1', spec: 'A2', pos: [outerW - 60, 40,                 floor], qty: 1 },
-      { id: 'J21', loc: 'D2右后怼C1', spec: 'A2', pos: [outerW - 60, P.railLength - 100, floor], qty: 1 },
+      // D2 接 C1 (D24 后改 A4 转接：D2 2020 ↔ C1 4040 截面不同需转接角码)
+      { id: 'J18', loc: 'D2左前接C1', spec: 'A4', pos: [0,           40,                 floor], qty: 1 },
+      { id: 'J19', loc: 'D2左后接C1', spec: 'A4', pos: [0,           P.railLength - 100, floor], qty: 1 },
+      { id: 'J20', loc: 'D2右前接C1', spec: 'A4', pos: [outerW - 60, 40,                 floor], qty: 1 },
+      { id: 'J21', loc: 'D2右后接C1', spec: 'A4', pos: [outerW - 60, P.railLength - 100, floor], qty: 1 },
+      // D1 中段吊柱 (D24)：底接 D2 (A3 ×2)、顶接 T1 (A4 转接)
+      { id: 'J58', loc: 'D1左底接D2', spec: 'A3', pos: [P20,             yMid - 10,      floor + P20],     qty: 1 },
+      { id: 'J59', loc: 'D1右底接D2', spec: 'A3', pos: [outerW - 2*P20,  yMid - 10,      floor + P20],     qty: 1 },
+      { id: 'J60', loc: 'D1左顶接T1', spec: 'A4', pos: [P20,             yMid - 10,      zTop0 - 20],      qty: 1 },
+      { id: 'J61', loc: 'D1右顶接T1', spec: 'A4', pos: [outerW - 2*P20,  yMid - 10,      zTop0 - 20],      qty: 1 },
       // S1 顶 / S2 底 / S3 前后底 (A3 ×2, 接 D4)
       { id: 'J37', loc: 'S1前顶接D4', spec: 'A3', pos: [cx - 10, 20,                 floor],      qty: 2 },
       { id: 'J38', loc: 'S1后顶接D4', spec: 'A3', pos: [cx - 10, P.railLength - 40,   floor],      qty: 2 },
