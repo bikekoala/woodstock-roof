@@ -282,5 +282,129 @@ ${md_shopping(spec.shoppingList)}
 
 fs.writeFileSync(path.join(__dirname, '..', 'onshape', 'spec.md'), md);
 
-console.log(`[gen-onshape-spec] onshape/spec.md + onshape/spec.json 已更新`);
+// ============================================================
+// 5. 输出 FeatureScript（Phase 2，给 Onshape Custom Feature 用）
+// ============================================================
+
+function fsArr(arr) { return '[' + arr.join(', ') + ']'; }
+
+// 收集所有需要在 Onshape 里生成实体的 box 实例
+// 角码/电动 marker 不进 FS（属于"小件"，Onshape 用 McMaster-Carr 标准件库拖入更好）
+const fsItems = [];
+extrusions.forEach(e => {
+  e.instances.forEach((inst, k) => fsItems.push({
+    code: e.code,
+    name: `${e.code}-${k + 1} ${e.name}`,
+    cat: e.cat,
+    o: inst.origin, s: inst.size,
+  }));
+});
+slideHinge.forEach(e => {
+  e.instances.forEach((inst, k) => fsItems.push({
+    code: e.code,
+    name: `${e.code}-${k + 1} ${e.name}`,
+    cat: e.cat,
+    o: inst.origin, s: inst.size,
+  }));
+});
+panels.forEach(e => {
+  e.instances.forEach((inst, k) => fsItems.push({
+    code: e.code,
+    name: `${e.code} ${e.name}`,
+    cat: e.cat,
+    o: inst.origin, s: inst.size,
+  }));
+});
+if (tank[0]) {
+  tank[0].instances.forEach((inst, k) => fsItems.push({
+    code: tank[0].code,
+    name: `${tank[0].code} ${tank[0].name}`,
+    cat: tank[0].cat,
+    o: inst.origin, s: inst.size,
+  }));
+}
+
+const partsLiteral = fsItems.map(p =>
+  `    { "code" : "${p.code}", "cat" : "${p.cat}", "name" : "${p.name.replace(/"/g, '\\"')}", "o" : ${fsArr(p.o)}, "s" : ${fsArr(p.s)} }`
+).join(',\n');
+
+const fsCode = `FeatureScript 2349;
+import(path : "onshape/std/geometry.fs", version : "2349.0");
+
+// ============================================================
+// woodstock-roof Frame Generator (Onshape Custom Feature)
+// 自动从 cad/model.js 生成（commit ${spec.scriptVersion} · ${dt}）
+// ⚠️ 不要手改本文件 — 改 cad/model.js → commit → 自动重生成
+//
+// 用法（30 秒）：
+//   1. Onshape Part Studio → 新建 Custom Feature（左上角 Feature Studio 图标）
+//   2. 粘贴本文件全部内容
+//   3. 右上 "Commit"
+//   4. 回 Part Studio，工具栏点 "Woodstock Frame" 图标 → "Generate" → ✓
+//   5. ${fsItems.length} 个 Part 一次性出现（型材 + 板 + 水箱 + 滑轨/合页）
+//
+// 装配阶段：标准件（角码 + 螺丝 + T 螺母）从 McMaster-Carr 或 MISUMI VONA 拖入，
+// 按 onshape/spec.md §3 Mate 表逐节点加约束。
+// ============================================================
+
+// 全部 ${fsItems.length} 个实体实例（坐标 mm；o=最小角点，s=包围盒尺寸）
+export const PARTS = [
+${partsLiteral}
+];
+
+annotation { "Feature Type Name" : "Woodstock Frame" }
+export const woodstockFrame = defineFeature(function(context is Context, id is Id, definition is map)
+    precondition
+    {
+        annotation { "Name" : "生成全部 ${fsItems.length} 件零件" }
+        definition.confirmGenerate is boolean;
+    }
+    {
+        if (!definition.confirmGenerate)
+            return;
+        for (var i = 0; i < size(PARTS); i += 1)
+        {
+            createBoxPart(context, id + ("p" ~ i), PARTS[i]);
+        }
+    });
+
+// 在绝对坐标系生成一个轴对齐 box 实体
+function createBoxPart(context is Context, id is Id, part is map)
+{
+    var o = part.o;   // [ox, oy, oz] mm
+    var s = part.s;   // [sx, sy, sz] mm
+
+    // 在 z = o[2] 的水平面（XY 平面平移）创建 sketch
+    var sketchPlane = plane(
+        vector(0, 0, o[2]) * millimeter,
+        vector(0, 0, 1)
+    );
+
+    var sk = newSketchOnPlane(context, id + "sketch", { "sketchPlane" : sketchPlane });
+    skRectangle(sk, "rect", {
+        "firstCorner"  : vector(o[0],          o[1])          * millimeter,
+        "secondCorner" : vector(o[0] + s[0],   o[1] + s[1])   * millimeter
+    });
+    skSolve(sk);
+
+    opExtrude(context, id + "extrude", {
+        "entities"  : qSketchRegion(id + "sketch"),
+        "direction" : vector(0, 0, 1),
+        "endBound"  : BoundingType.BLIND,
+        "endDepth"  : s[2] * millimeter
+    });
+
+    // 命名生成的实体（在 Parts 列表中显示）
+    setProperty(context, {
+        "entities"     : qCreatedBy(id + "extrude", EntityType.BODY),
+        "propertyType" : PropertyType.NAME,
+        "value"        : part.name
+    });
+}
+`;
+
+fs.writeFileSync(path.join(__dirname, '..', 'onshape', 'woodstock-frame.fs'), fsCode);
+
+console.log(`[gen-onshape-spec] onshape/spec.md + onshape/spec.json + onshape/woodstock-frame.fs 已更新`);
 console.log(`  零件 ${spec.totals.parts} 件 / 型材实例 ${spec.totals.extrusions} / 节点 ${spec.totals.joints} / 型材 ${(spec.totals.profileLen_mm / 1000).toFixed(2)}m`);
+console.log(`  FeatureScript: ${fsItems.length} 个 box 实例待 Onshape 一键生成`);

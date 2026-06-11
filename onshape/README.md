@@ -56,18 +56,32 @@ onshape/spec.md   ← 人读，照着搭 Part Studio
 onshape/spec.json ← 机读，给 Phase 2 用
 ```
 
-### ⏳ Phase 2：FeatureScript 一键生成骨架（下一步）
+### ✅ Phase 2：FeatureScript 一键生成 36 件零件
+
+文件：[woodstock-frame.fs](woodstock-frame.fs)（自动生成）
 
 ```
-onshape/spec.json
-    ↓ Onshape Custom Feature (Phase 2 .fs)
-Part Studio: 28 个型材实例 自动生成
+cad/model.js
+    ↓ scripts/gen-onshape-spec.js (pre-commit 自动)
+onshape/woodstock-frame.fs   ← 装配蓝图 + 生成器，一份代码
+    ↓ 你复制粘贴到 Onshape Custom Feature
+Part Studio: 36 个实体（28 型材 + 3 滑轨/合页 + 4 板 + 1 水箱）一次性生成
 ```
 
-需要你先准备：
-1. **Onshape 账号**：[onshape.com](https://www.onshape.com) — 免费版只能 Public 文档（已和我们 GitHub 仓库一致 PUBLIC）
-2. **看 30 分钟 tutorial**：[FeatureScript Quick Start](https://learn.onshape.com/learn/article/featurescript-quick-start)
-3. **跟 agent 说"准备好了"**：AI 写 ~300 行 .fs 文件 + 说明粘贴步骤
+**用法（30 秒）**：
+
+1. Onshape **登录** → New Document → 命名 `woodstock-roof`
+2. 左下角 + → **Create Feature Studio** → 命名 `frame-generator`
+3. 全选 → 删除模板代码
+4. **粘贴 [woodstock-frame.fs](woodstock-frame.fs) 全部内容**
+5. 右上 **Commit**（按钮蓝色）
+6. 顶栏 ← 回到 Part Studio
+7. 工具栏右侧最末有个新图标（"Woodstock Frame"）→ 点开
+8. 勾选"生成全部 36 件零件" → ✓ → **所有 36 个 Part 一次性出现**
+
+改了 [cad/model.js](../cad/model.js)？pre-commit 会自动重生成 .fs；你只需重新粘贴到 Onshape Feature Studio 即可（5 秒）。
+
+**如果有语法错 / 几何不对**：贴 Onshape 错误日志给我，我迭代 .fs 模板。Onshape 浏览器报错信息直接显示行号 + 原因。
 
 ### ⏳ Phase 3：标准件库 + 装配（人主导）
 
