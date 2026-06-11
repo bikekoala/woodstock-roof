@@ -71,44 +71,31 @@ function call(method, urlPath, query = '', body = null) {
   console.log(`     Part Studio: ${partStudio.name} (${partStudio.id})`);
   console.log(`     Assembly:    ${assembly.name} (${assembly.id})`);
 
-  // 2. 列 Part Studio 1 里的 Part 数量（确认 FS 生成成功）
-  console.log(`[2/4] 检查 Part Studio 里的 Part 数量…`);
-  const parts = await call('GET', `/api/parts/d/${did}/w/${wid}/e/${partStudio.id}`);
-  console.log(`     发现 ${parts.length} 个 Part（应该 36 个）`);
-  if (parts.length === 0) {
-    console.error(`     ❌ Part Studio 是空的。先在 Onshape UI 里跑 Custom Feature 生成 Part。`);
+  // 2. 看 Assembly 当前有几个 instance（如果非空，先警告）
+  const asmDef = await call('GET', `/api/assemblies/d/${did}/w/${wid}/e/${assembly.id}`);
+  if (asmDef.rootAssembly.instances.length > 0) {
+    console.error(`[2/3] ❌ Assembly 已有 ${asmDef.rootAssembly.instances.length} 个实例。`);
+    console.error(`        本脚本只支持空 Assembly。请先在 Onshape UI 里全选 → 删除，或者重建文档。`);
     process.exit(1);
   }
+  console.log(`[2/3] Assembly 是空的 ✓`);
 
-  // 3. 把 Part Studio 整体 Insert 到 Assembly（一个 instance = 一个零件）
-  //    Onshape Assembly API: POST /api/assemblies/d/{did}/w/{wid}/e/{aid}/instances
-  //    Body: { documentId, elementId, isAssembly: false, partId, isWholePartStudio: false }
-  console.log(`[3/4] 把 ${parts.length} 个 Part 逐个 Insert 到 Assembly…`);
-  let inserted = 0;
-  for (const part of parts) {
-    try {
-      await call('POST', `/api/assemblies/d/${did}/w/${wid}/e/${assembly.id}/instances`, '', {
-        documentId: did,
-        elementId:  partStudio.id,
-        partId:     part.partId,
-        isAssembly: false,
-        isWholePartStudio: false,
-      });
-      inserted++;
-      process.stdout.write(`\r     ${inserted}/${parts.length} ${part.name}`.padEnd(80, ' '));
-    } catch (e) {
-      console.log(`\n     ⚠️ 跳过 "${part.name}": ${e.message.slice(0, 100)}`);
-    }
-  }
-  console.log(`\n     ✅ ${inserted}/${parts.length} Insert 成功`);
+  // 3. 一次 Insert 整个 Part Studio（isWholePartStudio: true）
+  //    这样保留 Part Studio 的几何关系 + 只占 1 个组（避免 36 次零散 Insert 的重影坑）
+  console.log(`[3/3] Insert Part Studio (whole) → Assembly…`);
+  await call('POST', `/api/assemblies/d/${did}/w/${wid}/e/${assembly.id}/instances`, '', {
+    documentId: did,
+    elementId:  partStudio.id,
+    isAssembly: false,
+    isWholePartStudio: true,
+  });
+  const asm2 = await call('GET', `/api/assemblies/d/${did}/w/${wid}/e/${assembly.id}`);
+  console.log(`     ✅ Insert 完成，现有 ${asm2.rootAssembly.instances.length} 个实例（应该 36 个，组成一组）`);
 
-  // 4. 给 URL 让车主直接打开 Assembly
-  console.log(`[4/4] 完成。`);
   console.log(`\n🎉 Assembly 1 已装配。打开链接：`);
   console.log(`   https://cad.onshape.com/documents/${did}/w/${wid}/e/${assembly.id}\n`);
-  console.log(`下一步（手动 30 秒）：`);
-  console.log(`   - Assembly 1 里所有 Part 已 Insert 但位置都在原点叠在一起`);
-  console.log(`   - 选所有零件 (Cmd+A) → 右键 → "Fix" 把它们都按 Part Studio 的位置锁定`);
-  console.log(`   - 或者继续手动加 Mate 约束（spec.md §3 Mate 表）`);
+  console.log(`下一步（在 Onshape UI 里手动）：`);
+  console.log(`   - 几何位置应该已对（跟 Part Studio 1 一样）— 整组刚体已锁定`);
   console.log(`   - 加标准件：左侧 "+ Insert" → "Standard content" → 拖角码/螺丝`);
+  console.log(`   - 跑干涉检查：Assembly → Interference check`);
 })().catch(e => { console.error('\n❌', e.message); process.exit(1); });
