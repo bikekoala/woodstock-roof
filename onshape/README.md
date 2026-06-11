@@ -89,12 +89,34 @@ Part Studio: 36 个实体（28 型材 + 3 滑轨/合页 + 4 板 + 1 水箱）一
 - 在 Assembly 里按 [spec.md §3](spec.md) Mate 表逐节点加约束
 - 跑 Onshape Interference Check（应该 0 处，model.js 已经验过）
 
-### ⏳ Phase 4：REST API 自动化（高级）
+### ✅ Phase 4 入门：API 一键上传 FS（已实现）
 
-- AI 调 Onshape REST API：① 改参数批量更新；② 跑干涉报告；③ 生成 BOM 给 design/
-- 复用 model.js 的参数（boxHeight 改了 Onshape 自动重建）
-- 凭证管理见上面"API 凭证管理"段
-- 已有 hello world：[scripts/onshape-api-hello.js](../scripts/onshape-api-hello.js)
+不用手工 8 步了，直接跑：
+
+```bash
+# 创建新文档 + Feature Studio + 上传 FS（首次）
+node scripts/onshape-upload.js
+
+# 改了 model.js 后更新现有文档（复用 documentId）
+node scripts/onshape-upload.js <documentId>
+```
+
+脚本：[scripts/onshape-upload.js](../scripts/onshape-upload.js)
+工作流：
+1. 调 `POST /api/documents` 创建 Public 文档
+2. 调 `POST /api/featurestudios/d/{did}/w/{wid}` 建 frame-generator
+3. 调 `POST /api/featurestudios/.../{eid}` 上传 woodstock-frame.fs
+
+3 次 API 调用，输出一个 Onshape URL 给你直接打开。
+
+### ⏳ Phase 4 高级（继续）
+
+- 调 REST API 跑参数批量更新（model.js 改了 → 自动同步到 Onshape）
+- 跑 Onshape Interference Check 拉报告（与 model.js 自检交叉验证）
+- 拉 Onshape BOM / 重量 / 重心写回 design/
+
+凭证管理见上面"API 凭证管理"段。
+基础脚本：[scripts/onshape-api-hello.js](../scripts/onshape-api-hello.js)
 
 ## API 限额账（免费版 2500 请求/月）
 
