@@ -17,6 +17,7 @@ const FRAME_GROUPS = [
   ['M1', 'M2', 'M3'],       // 底框
   ['T1', 'T2'],             // 顶框
   ['D1', 'D2', 'D3', 'D4'], // 吊装托盘
+  ['PA1', 'PA2', 'K2'],     // D19/D20 板 A 双层折叠：合页跨主板/延展板接缝，共面接合算 JOINT
 ];
 // 跨组的设计内连接（端面贴合，正常不会穿入；列出以免误报）：
 //   C1 接底框/顶框、S1 接底框/托盘、D1 接顶框 —— 均为端面 touch，穿深 < EPS 自动豁免。
@@ -32,12 +33,16 @@ function intersect(a, b) {
   return null;
 }
 
-// 全行程扫描，记录每一对的最大穿深（滑板移动取最坏情况）
+// 全行程扫描，记录每一对的最大穿深
+//  · deploy 0→1 全程扫（板 A 折叠态沿 x 滑出，中间态线性插值物理正确）
+//  · flip 只验两端态（折叠/展开）：中间态合页是弧线旋转、线性插值会假撞
 const worst = new Map(); // key "CODEA|CODEB" -> {a,b,an,bn,pen,box}
-for (let step = 0; step <= 20; step++) {
-  const deploy = step / 20;
-  // 连接件（角码 A*）本就是骑在所连构件上的，与梁重叠属正常 → 不参与穿插检测
-  const parts = buildModel({ deploy }).filter(p => p.cat !== 'conn');
+const stateGrid = [];
+for (let i = 0; i <= 20; i++) stateGrid.push({ deploy: i / 20, flip: 0 });
+stateGrid.push({ deploy: 1, flip: 1 });   // 二次展开终态（PA2 与 PA1 边对边共面，不重叠）
+for (const state of stateGrid) {
+  // 连接件（角码 A*）/ 电动接口（motor）本就是骑在所连构件上的，与梁重叠属正常 → 不参与穿插检测
+  const parts = buildModel(state).filter(p => p.cat !== 'conn' && p.cat !== 'motor');
   for (let i = 0; i < parts.length; i++) {
     for (let j = i + 1; j < parts.length; j++) {
       const A = parts[i], B = parts[j];

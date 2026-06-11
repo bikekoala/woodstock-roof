@@ -9,17 +9,20 @@
   const DEFAULTS = {
     railSpacing: 1020,  // OEM 导轨中心距，实测：后端 1020、前端 1070 渐缩，取后端
     railLength:  1300,  // 主纵梁长，实测：平直支撑段 1000 + 前坡 250/后坡 200，折中取 1300
-    boxHeight:   110,   // 箱体内净高（立柱高）
-    panelTravel: 1000,  // 单侧抽出行程
-    deploy:      0,     // 展开程度 0~1（仅影响显示位置）
+    boxHeight:   130,   // 箱体内净高（立柱高）— D19 升 110→130 容纳中层 44mm（滑轨 27+主 6+合页 3+延 8）
+    panelTravel: 1000,  // 板 A 沿 x 滑出行程（主驾侧）
+    deploy:      0,     // 滑出程度 0~1（板 A 整体沿 x 向左滑）
+    flip:        0,     // 延展板翻 180° 程度 0~1（D20 二次展开）— 0=叠主板上、1=共面外侧
     tankH:       70,    // 水箱/托盘深
   };
   // 固定常量
-  const P40 = 40, P20 = 20, panelW = 1000, panelL = 1200, zBot = 35; // zBot=OEM 导轨抬高，待实测
-  // 调色板
-  const COLOR = { frame: 0x4a90d9, tray: 0xe07b39, panel: 0x1f3a5f, tank: 0x37c0e0 };
+  const P40 = 40, P20 = 20, panelW = 1000, panelL = 1120, zBot = 35;
+  // 板 A 复合结构（D19/D20）：主板 ETFE 3 + 铝塑板 3 = 6mm；延展板 ETFE 3 + 蜂窝铝 5 = 8mm；合页 3mm
+  const panelMainH = 6, panelExtH = 8, hingeH = 3, railFlatH = 27;
+  // 调色板（panelExt 用稍浅色区分延展板）
+  const COLOR = { frame: 0x4a90d9, tray: 0xe07b39, panel: 0x1f3a5f, panelExt: 0x3b5f8a, tank: 0x37c0e0, slide: 0x6b7280, hinge: 0x10b981 };
   // 类别中文名
-  const CAT = { struct: '箱体骨架 4040', tray: '吊装托盘', panel: '太阳能板', tank: '水箱', conn: '连接件 角码（按节点登记 docs/joints.md）' };
+  const CAT = { struct: '箱体骨架 4040', tray: '吊装托盘', panel: '太阳能板', tank: '水箱', slide: '滑轨/合页', conn: '连接件 角码（按节点登记 docs/joints.md）', motor: '电动接口（D22）' };
 
   // ===== 连接节点（角码）型号字典 — 见 docs/joints.md =====
   // box  = 3D 标识方块外接尺寸（mm，BOM 与 3D 一致）。简化呈现：每节点 1 块方块代表角码位置，
@@ -37,6 +40,15 @@
     U1: { box: [40, 60, 30], color: 0x10b981, name: '4040 U 卡扣（连车）', mat: '不锈钢 U 夹（抱 OEM 导轨）', screws: {} },
     // K1 = 水箱 4 角压片（A3 + 弹簧片）— 真实卡子待水箱定型校正
     K1: { box: [20, 20, 15], color: 0x06b6d4, name: '水箱角压片', mat: 'A3 角码 + 不锈钢弹簧片', screws: { B2: 2 } },
+    // D19/D20 板 A 双层折叠机构：滑轨自带螺孔不进 B1/B2、合页自带铆钉
+    R1: { box: [30, 12, 27], color: 0x6b7280, name: '扁装三节滑轨 1m 全伸', mat: '钢制三节抽屉滑轨 27×12.7×1000', screws: {} },
+    K2: { box: [25, 12, 3],  color: 0x10b981, name: '钢琴合页（主板↔延展板）', mat: 'SS304 钢琴合页 1120mm 整条', screws: {} },
+    // D22 电动接口 marker（具体型号待选）
+    E0: { cat: 'motor', box: [80, 60, 30], color: 0x8b5cf6, name: 'ESP32 控制盒（含 L298N）', mat: 'ABS 盒 80×60×30 + ESP32-DevKit + L298N', screws: {} },
+    E1: { cat: 'motor', box: [40, 35, 30], color: 0xa855f7, name: 'DC 减速电机（滑出驱动）', mat: '12V 30W 减速电机 + GT2 带轮', screws: {} },
+    E2: { cat: 'motor', box: [25, 25, 25], color: 0xc084fc, name: 'GT2 同步带轮 / 张紧轮', mat: '20T GT2 同步轮 25×25 圆柱', screws: {} },
+    E3: { cat: 'motor', box: [250, 25, 25], color: 0xa855f7, name: '电动推杆（延展板翻折驱动）', mat: '12V 直线推杆 250mm 行程沿 x', screws: {} },
+    L1: { cat: 'motor', box: [10, 10, 5],  color: 0xef4444, name: '限位微动开关', mat: '机械微动 + 霍尔备份', screws: {} },
   };
   const FASTENERS = {
     B1: { name: 'M6×16 内六角 + 弹簧 T 螺母 M6', use: '4040 槽用（A1/A2/A4 的 4040 侧）' },
@@ -85,12 +97,43 @@
     //   几何与 S2 镜像，仅 y 位置不同（前端 y=0、后端 y=railLength-20）。详见 docs/decisions.md D16。
     B(null, 'S3', '前后端中央立柱', '2020 铝型材', '20×20', Math.round(s2h), 'struct', P20, P20, s2h, outerW / 2 - P20 / 2, 0, floor + P20, COLOR.frame);
     B(null, 'S3', '前后端中央立柱', '2020 铝型材', '20×20', Math.round(s2h), 'struct', P20, P20, s2h, outerW / 2 - P20 / 2, P.railLength - P20, floor + P20, COLOR.frame);
-    // ----- 底层 板C -----
-    B('showPanelC', 'PC', '太阳能板C(下挂)', 'ETFE 柔性板', '1000×1200', '—', 'panel', panelW, panelL, 8, xc, -off, zBot - 14, COLOR.panel, 0.95);
-    // ----- 中层 板B / 板A（长边=railLength-120 居中：对角立柱让 20、对竖撑 S1 让 40，滑出路径零碰撞，见 docs/decisions.md D9）-----
-    const abLen = Math.min(panelL, P.railLength - 120), abY = (P.railLength - abLen) / 2;
-    B('showSliding', 'PB', '太阳能板B(右滑)', 'ETFE 柔性板', '1000×' + abLen, '—', 'panel', panelW, abLen, 8, xc + off, abY, zBotTop + 8, COLOR.panel, 0.92);
-    B('showSliding', 'PA', '太阳能板A(左滑)', 'ETFE 柔性板', '1000×' + abLen, '—', 'panel', panelW, abLen, 8, xc - off, abY, zBotTop + 22, COLOR.panel, 0.92);
+    // ----- 底层 板C（下挂前抽，保留）-----
+    B('showPanelC', 'PC', '太阳能板C(下挂前抽)', 'ETFE 柔性板', '1000×1120 + 3mm 铝塑', '—', 'panel', panelW, panelL, 6, xc, -off, zBot - 12, COLOR.panel, 0.95);
+    // ===== D19/D20：取消板 B；板 A 拆为主板 PA1 + 延展板 PA2（合页对折，单侧二次展开）=====
+    // 居中端隙 = (railLength - panelL)/2 = 90mm/端（前 90 / 后 90）
+    const paY = (P.railLength - panelL) / 2;
+    const zRail = zBotTop;                       // 滑轨底 z=75
+    const zPa1  = zRail + railFlatH;             // 主板底 z=102（滑轨顶）
+    const zHinge = zPa1 + panelMainH;            // 合页 z=108（主板顶）
+    const zPa2Fold = zHinge + hingeH;            // 折叠态延展板底 z=111
+    const zPa2Open = zPa1;                       // 展开态延展板底 z=102（与主板共面）
+    // 滑出位移：deploy 0→1 = 板整体沿 x 向主驾（左，x 负向）滑出 panelTravel mm
+    const slideX = -P.deploy * P.panelTravel;
+    // 折叠/翻折状态：flip 0→1 = 延展板从"叠主板上"翻到"主板外侧共面"
+    // 折叠时 PA2 位置 = PA1 位置（叠上方），翻到 1 时 PA2 位置 = PA1 位置 - panelW（外侧共面）
+    const flipDX = -P.flip * panelW;
+    const pa2Z = zPa2Fold + P.flip * (zPa2Open - zPa2Fold);   // 翻转过程中 z 从 111 渐降到 102
+    // 主板 PA1（下层 · 始终发电朝上）
+    B('showSliding', 'PA1', '太阳能板A主板', 'ETFE 柔性 + 3mm 铝塑', '1000×1120', '—', 'panel',
+      panelW, panelL, panelMainH, xc + slideX, paY, zPa1, COLOR.panel, 0.95);
+    // 延展板 PA2（上层 · 折叠时电池片朝下；翻 180° 后朝上）
+    // ⚠️ 延展板生产时电池片要装"折叠朝下、翻后朝上"那一面（详见 docs/decisions.md D19）
+    B('showSliding', 'PA2', '太阳能板A延展板', 'ETFE 柔性 + 5mm 蜂窝铝', '1000×1120', '—', 'panel',
+      panelW, panelL, panelExtH, xc + slideX + flipDX, paY, pa2Z, COLOR.panelExt, 0.92);
+    // ===== 扁装三节滑轨 R1：M2 前/后横梁顶面各一根，沿 x 1m =====
+    const railLen = P.panelTravel;               // 1000mm 全伸三节
+    const railX = (outerW - railLen) / 2;        // 居中（收回时滑轨完全在箱内）
+    // 收回 → 展开：滑轨内拉段同步左移 deploy×panelTravel；近似呈现外段固定 + 内段位移
+    // 简化用一根 marker（不分三段），位置随板移动
+    const railSlideX = -P.deploy * P.panelTravel / 2;        // 中段平均位移
+    B('showSliding', 'R1', '扁装三节滑轨(前)', '钢制 27×12.7×1000', '—', 1000, 'slide',
+      railLen, 12, railFlatH, railX + railSlideX, P40, zRail, COLOR.slide, 0.85);
+    B('showSliding', 'R1', '扁装三节滑轨(后)', '钢制 27×12.7×1000', '—', 1000, 'slide',
+      railLen, 12, railFlatH, railX + railSlideX, P.railLength - P40 - 12, zRail, COLOR.slide, 0.85);
+    // ===== 钢琴合页 K2（主板外端整条沿 y 方向 1120mm）=====
+    // 折叠时合页在主板外端（朝主驾外的 x 方向）；滑出+翻折时合页位置随板移动
+    B('showSliding', 'K2', '钢琴合页 SS304 1120mm', 'SS304 钢琴合页', '—', panelL, 'slide',
+      6, panelL, hingeH, xc + slideX - 3, paY, zHinge, COLOR.hinge, 0.95);
     // ----- 整体托盘：边梁 D2 升 4040，与 M1/C1 同规格、同 x 平面（x0–40 / outerW−40），两端直接怼进前后角立柱 C1。
     //   托盘载荷 D2 → C1 → M1 → 导轨 直传（这才是"接到 C1"）。D2 跨两立柱(1220) 4040 自身够刚(跨中垂~1mm)，
     //   故原中段吊柱 D1 由立柱顶替、取消（与上次误删不同：那时 D2 还是细 2020 需 D1 兜）。详见 docs/decisions.md D15。
@@ -105,20 +148,22 @@
     // ----- 水箱（坐在托盘内，宽=托盘内净宽 gap2）-----
     B('showTank', 'WT', '扁平水箱', '不锈钢扁箱', gap2 + '×' + (P.railLength / 2 - 80) + '×' + P.tankH, '—', 'tank',
       gap2, P.railLength / 2 - 80, P.tankH - P20, P40, 40, floor + P20, COLOR.tank, 0.5);
-    // ----- 顶板（固定）-----
-    B('showTopPanel', 'PT', '顶板(固定)', 'ETFE 柔性板', '1000×' + (P.railLength / 2 - 60), '—', 'panel',
-      1000, P.railLength / 2 - 60, 8, xc, 40, zTop1, COLOR.panel, 0.95);
+    // ----- 顶板（固定）— 厚 6mm 与板 C 同规格（D19）-----
+    B('showTopPanel', 'PT', '顶板(固定)', 'ETFE 柔性 + 3mm 铝塑', '1000×' + (P.railLength / 2 - 60), '—', 'panel',
+      1000, P.railLength / 2 - 60, 6, xc, 40, zTop1, COLOR.panel, 0.95);
 
-    // ===== 连接节点（角码 marker）— 节点表见 docs/joints.md =====
+    // ===== 连接节点（角码 marker）/ 电动接口 marker — 节点表见 docs/joints.md =====
     buildJoints(P).forEach(j => {
       const s = JOINT_SPECS[j.spec];
       const [w, d, h] = s.box;
+      const cat = s.cat || 'conn';           // spec 可声明自己的 cat（如 E0/E1/L1 = 'motor'），默认连接件
+      const visKey = cat === 'motor' ? 'showJoints' : 'showJoints';
       for (let k = 0; k < j.qty; k++) {
         // qty=2 节点的 2 块沿 x 错开 25mm，视觉对称可辨；不动 BOM 件数
         const dx = j.qty > 1 ? (k === 0 ? -12 : 12) : 0;
         parts.push({
-          vis: 'showJoints', code: j.spec, name: s.name, profile: '角码', section: s.mat,
-          length: '—', cat: 'conn',
+          vis: visKey, code: j.spec, name: s.name, profile: cat === 'motor' ? '电动接口' : '角码', section: s.mat,
+          length: '—', cat: cat,
           xw: w, yd: d, zh: h,
           x: j.pos[0] + dx, y: j.pos[1], z: j.pos[2],
           color: s.color, opacity: 0.92,
@@ -201,6 +246,29 @@
     J.push({ id: 'J47', loc: '水箱前右角压片', spec: 'K1', pos: [tankXr, 45,     tankTop], qty: 1 });
     J.push({ id: 'J48', loc: '水箱后左角压片', spec: 'K1', pos: [45,     tankYr, tankTop], qty: 1 });
     J.push({ id: 'J49', loc: '水箱后右角压片', spec: 'K1', pos: [tankXr, tankYr, tankTop], qty: 1 });
+
+    // ===== D22 电动接口 marker（J50-J57, 8 节点）=====
+    // R1 滑轨自带螺孔拧 M2 T 槽（不另登记），K2 合页自带铆钉沿板外端整条（不另登记）
+    // 位置随板移动用 slideX；几何细节见 docs/decisions.md D22
+    const xcA = (outerW - panelW) / 2;
+    const slideX = -P.deploy * P.panelTravel;
+    const zPa1 = zBotTop + railFlatH;
+    const zHinge = zPa1 + panelMainH;
+    const paY = (P.railLength - panelL) / 2;
+    // E0 ESP32 控制盒（水箱后方置物区上方，副驾角立柱内侧，z 在立柱内空间中部）
+    J.push({ id: 'J50', loc: 'ESP32 控制盒',         spec: 'E0', pos: [outerW - 120,    900,                   zBotTop + 90],         qty: 1 });
+    // E1 DC 电机（副驾侧 M1 后段顶面，y 在板 A 后端 1210 与 R1 后滑轨 1248 之间的 38mm 空隙内）
+    J.push({ id: 'J51', loc: 'DC 减速电机(滑出)',    spec: 'E1', pos: [outerW - 40,     paY + panelL + 3,      zBotTop],              qty: 1 });
+    // E2 GT2 同步带轮（前后 M2 顶面，副驾侧避开 C1 角立柱 x=980-1020）
+    J.push({ id: 'J52', loc: 'GT2 同步轮(前)',        spec: 'E2', pos: [outerW - 130,    10,                    zBotTop],              qty: 1 });
+    J.push({ id: 'J53', loc: 'GT2 同步轮(后驱动)',    spec: 'E2', pos: [outerW - 130,    P.railLength - 30,     zBotTop],              qty: 1 });
+    // E3 电动推杆（沿 x 方向 250mm 长，铰接在板前端外侧 y=paY-30 即板 y 范围外）
+    J.push({ id: 'J54', loc: '电动推杆(翻折)',         spec: 'E3', pos: [xcA + slideX + 10, paY - 30, zPa1],                              qty: 1 });
+    // L1 限位开关 ×4：滑出 0/1m + 翻折 0°/180°
+    J.push({ id: 'J55', loc: '限位 · 滑出收回',       spec: 'L1', pos: [outerW - 50,     P.railLength - 60,     zBotTop + railFlatH],  qty: 1 });
+    J.push({ id: 'J56', loc: '限位 · 滑出全开',       spec: 'L1', pos: [5,               P.railLength - 60,     zBotTop + railFlatH],  qty: 1 });
+    J.push({ id: 'J57', loc: '限位 · 翻折 0°/180°',  spec: 'L1', pos: [xcA + slideX - 15, paY - 12,           zHinge],               qty: 1 });
+
     return J;
   }
 
