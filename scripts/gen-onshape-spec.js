@@ -290,42 +290,42 @@ function fsArr(arr) { return '[' + arr.join(', ') + ']'; }
 
 // 收集所有需要在 Onshape 里生成实体的 box 实例
 // 角码/电动 marker 不进 FS（属于"小件"，Onshape 用 McMaster-Carr 标准件库拖入更好）
+// 加 profile 字段：4040/2020 走真 T 槽截面，0 走简化 box
+const PROFILE_BY_CODE = {
+  M1: 4040, M2: 4040, C1: 4040, T1: 4040,                         // 4040 主承力件
+  T2: 2020, S1: 2020, S2: 2020, S3: 2020, D1: 2020, D2: 2020, D3: 2020, D4: 2020,  // 2020 全部
+};
 const fsItems = [];
 extrusions.forEach(e => {
   e.instances.forEach((inst, k) => fsItems.push({
     code: e.code,
     name: `${e.code}-${k + 1} ${e.name}`,
     cat: e.cat,
+    profile: PROFILE_BY_CODE[e.code] || 0,
     o: inst.origin, s: inst.size,
   }));
 });
 slideHinge.forEach(e => {
   e.instances.forEach((inst, k) => fsItems.push({
-    code: e.code,
-    name: `${e.code}-${k + 1} ${e.name}`,
-    cat: e.cat,
-    o: inst.origin, s: inst.size,
+    code: e.code, name: `${e.code}-${k + 1} ${e.name}`, cat: e.cat,
+    profile: 0, o: inst.origin, s: inst.size,
   }));
 });
 panels.forEach(e => {
   e.instances.forEach((inst, k) => fsItems.push({
-    code: e.code,
-    name: `${e.code} ${e.name}`,
-    cat: e.cat,
-    o: inst.origin, s: inst.size,
+    code: e.code, name: `${e.code} ${e.name}`, cat: e.cat,
+    profile: 0, o: inst.origin, s: inst.size,
   }));
 });
 if (tank[0]) {
   tank[0].instances.forEach((inst, k) => fsItems.push({
-    code: tank[0].code,
-    name: `${tank[0].code} ${tank[0].name}`,
-    cat: tank[0].cat,
-    o: inst.origin, s: inst.size,
+    code: tank[0].code, name: `${tank[0].code} ${tank[0].name}`, cat: tank[0].cat,
+    profile: 0, o: inst.origin, s: inst.size,
   }));
 }
 
 const partsLiteral = fsItems.map(p =>
-  `    { "code" : "${p.code}", "cat" : "${p.cat}", "name" : "${p.name.replace(/"/g, '\\"')}", "o" : ${fsArr(p.o)}, "s" : ${fsArr(p.s)} }`
+  `    { "code" : "${p.code}", "cat" : "${p.cat}", "name" : "${p.name.replace(/"/g, '\\"')}", "profile" : ${p.profile}, "o" : ${fsArr(p.o)}, "s" : ${fsArr(p.s)} }`
 ).join(',\n');
 
 const fsCode = `FeatureScript 2625;
@@ -364,9 +364,115 @@ export const woodstockFrame = defineFeature(function(context is Context, id is I
             return;
         for (var i = 0; i < size(PARTS); i += 1)
         {
-            createBoxPart(context, id + ("p" ~ i), PARTS[i]);
+            var p = PARTS[i];
+            if (p.profile == 4040 || p.profile == 2020)
+                createAluBeam(context, id + ("p" ~ i), p);    // 真 T 槽截面（4040/2020 工业铝型材）
+            else
+                createBoxPart(context, id + ("p" ~ i), p);    // 简化 box（板/水箱/滑轨/合页）
         }
     });
+
+// ============================================================
+// 真 T 槽铝型材生成器（MISUMI HFS5 系列参考尺寸）
+// 4040：边长 40，T 槽外口 7mm，槽深 6mm，4 面各一道纵向 T 槽
+// 2020：边长 20，T 槽外口 5mm，槽深 4mm
+// 简化：用矩形凹槽近似真 T 槽内腔（视觉接近，能看到"螺丝孔"）
+// ============================================================
+function tslotPolyline(anchorX is number, anchorY is number, S is number, W is number, D is number) returns array
+{
+    // 截面 polyline 顶点（沿外形 + 4 道矩形凹槽逆时针走一圈，单位 mm）
+    return [
+        // 底边 + 底面凹槽
+        [anchorX,             anchorY],
+        [anchorX + S/2 - W/2, anchorY],
+        [anchorX + S/2 - W/2, anchorY + D],
+        [anchorX + S/2 + W/2, anchorY + D],
+        [anchorX + S/2 + W/2, anchorY],
+        [anchorX + S,         anchorY],
+        // 右边 + 右面凹槽
+        [anchorX + S,         anchorY + S/2 - W/2],
+        [anchorX + S - D,     anchorY + S/2 - W/2],
+        [anchorX + S - D,     anchorY + S/2 + W/2],
+        [anchorX + S,         anchorY + S/2 + W/2],
+        [anchorX + S,         anchorY + S],
+        // 顶边 + 顶面凹槽
+        [anchorX + S/2 + W/2, anchorY + S],
+        [anchorX + S/2 + W/2, anchorY + S - D],
+        [anchorX + S/2 - W/2, anchorY + S - D],
+        [anchorX + S/2 - W/2, anchorY + S],
+        [anchorX,             anchorY + S],
+        // 左边 + 左面凹槽
+        [anchorX,             anchorY + S/2 + W/2],
+        [anchorX + D,         anchorY + S/2 + W/2],
+        [anchorX + D,         anchorY + S/2 - W/2],
+        [anchorX,             anchorY + S/2 - W/2]
+    ];
+}
+
+function createAluBeam(context is Context, id is Id, part is map)
+{
+    var o = part.o;
+    var s = part.s;
+    var prof = part.profile;
+    // T 槽参数
+    var S = prof == 4040 ? 40 : 20;
+    var W = prof == 4040 ? 7  : 5;   // 槽外口宽
+    var D = prof == 4040 ? 6  : 4;   // 槽深
+
+    // 找型材长度方向：size 数组里最大的那一维
+    var lengthAxis = 0;
+    if (s[1] > s[lengthAxis]) lengthAxis = 1;
+    if (s[2] > s[lengthAxis]) lengthAxis = 2;
+    var depth = s[lengthAxis];
+
+    // 根据长度方向选择 sketch 平面（截面在垂直于长度方向的平面）
+    // 用 PolylinePoints 画截面 polyline
+    var pts;
+    var sketchPlane;
+    var direction;
+    if (lengthAxis == 2) {
+        // 长度沿 z；截面在 xy 平面 z=o[2]
+        sketchPlane = plane(vector(0, 0, o[2]) * millimeter, vector(0, 0, 1));
+        pts = tslotPolyline(o[0], o[1], S, W, D);
+        direction = vector(0, 0, 1);
+    } else if (lengthAxis == 1) {
+        // 长度沿 y；截面在 xz 平面 y=o[1]，截面坐标 (x, z)
+        sketchPlane = plane(vector(0, o[1], 0) * millimeter, vector(0, 1, 0));
+        pts = tslotPolyline(o[0], o[2], S, W, D);
+        direction = vector(0, 1, 0);
+    } else {
+        // 长度沿 x；截面在 yz 平面 x=o[0]，截面坐标 (y, z)
+        sketchPlane = plane(vector(o[0], 0, 0) * millimeter, vector(1, 0, 0));
+        pts = tslotPolyline(o[1], o[2], S, W, D);
+        direction = vector(1, 0, 0);
+    }
+
+    var sk = newSketchOnPlane(context, id + "section", { "sketchPlane" : sketchPlane });
+    // 逐段画线（skLineSegment 比 skPolyline 兼容性更稳）
+    for (var i = 0; i < size(pts); i += 1)
+    {
+        var p1 = pts[i];
+        var p2 = pts[(i + 1) % size(pts)];
+        skLineSegment(sk, "L" ~ i, {
+            "start" : vector(p1[0], p1[1]) * millimeter,
+            "end"   : vector(p2[0], p2[1]) * millimeter
+        });
+    }
+    skSolve(sk);
+
+    opExtrude(context, id + "extrude", {
+        "entities"  : qSketchRegion(id + "section"),
+        "direction" : direction,
+        "endBound"  : BoundingType.BLIND,
+        "endDepth"  : depth * millimeter
+    });
+
+    setProperty(context, {
+        "entities"     : qCreatedBy(id + "extrude", EntityType.BODY),
+        "propertyType" : PropertyType.NAME,
+        "value"        : part.name
+    });
+}
 
 // 在绝对坐标系生成一个轴对齐 box 实体
 function createBoxPart(context is Context, id is Id, part is map)
