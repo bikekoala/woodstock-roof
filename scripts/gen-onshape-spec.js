@@ -1,0 +1,286 @@
+#!/usr/bin/env node
+// scripts/gen-onshape-spec.js
+// 从 cad/model.js 自动生成 Onshape 建模指南（人读 Markdown + 机读 JSON）
+//
+// 输出：
+//   docs/onshape-spec.md   — 人读：建模顺序 / Mate 表 / 采购清单
+//   docs/onshape-spec.json — 机读：给 Phase 2 FeatureScript 生成器吃
+//
+// 用法：node scripts/gen-onshape-spec.js
+//
+// 设计意图：把当前 Three.js 装配蓝图直接搬到 Onshape，零件 + 节点 + 标准件
+// 都自动列好，你打开 Onshape 照着建即可。改 model.js 重跑此脚本会同步更新。
+
+const path = require('path');
+const fs = require('fs');
+const M = require(path.join(__dirname, '..', 'cad', 'model.js'));
+
+// ============================================================
+// 1. 收集数据
+// ============================================================
+
+const parts = M.buildModel({});
+const joints = M.buildJoints(M.DEFAULTS);
+const bom = M.computeBOM(parts);
+
+// 按 code 聚合所有"型材/板/水箱/滑轨/合页"实例
+function aggregateByCode(filterFn) {
+  const map = {};
+  parts.filter(filterFn).forEach(p => {
+    if (!map[p.code]) {
+      map[p.code] = { code: p.code, name: p.name, profile: p.profile, section: p.section,
+                     length: p.length, cat: p.cat, instances: [] };
+    }
+    map[p.code].instances.push({
+      origin: [p.x, p.y, p.z],
+      size:   [p.xw, p.yd, p.zh],
+    });
+  });
+  return Object.values(map);
+}
+
+const extrusions = aggregateByCode(p => p.cat === 'struct' || p.cat === 'tray');
+const slideHinge = aggregateByCode(p => p.cat === 'slide');
+const panels     = aggregateByCode(p => p.cat === 'panel');
+const tank       = aggregateByCode(p => p.cat === 'tank');
+
+// 节点：保留 spec / loc / pos / qty 用于 Mate 表
+const jointList = joints.map(j => ({
+  id: j.id,
+  loc: j.loc,
+  spec: j.spec,
+  specName: M.JOINT_SPECS[j.spec] ? M.JOINT_SPECS[j.spec].name : '?',
+  cat: (M.JOINT_SPECS[j.spec] && M.JOINT_SPECS[j.spec].cat) || 'conn',
+  pos: j.pos,
+  qty: j.qty,
+  screws: (M.JOINT_SPECS[j.spec] && M.JOINT_SPECS[j.spec].screws) || {},
+}));
+
+// ============================================================
+// 2. 采购清单（型材按长度+截面分组、角码/紧固件/板按 code 分组）
+// ============================================================
+
+const profileBuy = {};        // "4040 1300mm" -> qty
+extrusions.forEach(e => {
+  if (typeof e.length === 'number') {
+    const key = `${e.profile} L=${e.length}mm`;
+    profileBuy[key] = (profileBuy[key] || 0) + e.instances.length;
+  }
+});
+
+const jointBuy = {};          // "A2" -> qty
+parts.filter(p => p.cat === 'conn').forEach(p => {
+  jointBuy[p.code] = (jointBuy[p.code] || 0) + 1;
+});
+
+const motorBuy = {};
+parts.filter(p => p.cat === 'motor').forEach(p => {
+  motorBuy[p.code] = (motorBuy[p.code] || 0) + 1;
+});
+
+// ============================================================
+// 3. 输出 JSON（给 Phase 2 FeatureScript 生成器吃）
+// ============================================================
+
+const spec = {
+  version:    '1.0',
+  source:     'cad/model.js',
+  scriptVersion: require('child_process').execSync('git rev-parse --short HEAD').toString().trim(),
+  params:     M.DEFAULTS,
+  constants:  M.CONST,
+  // 几何
+  extrusions, slideHinge, panels, tank: tank[0] || null,
+  // 装配
+  joints: jointList,
+  // 采购
+  shoppingList: {
+    profiles:  profileBuy,
+    joints:    jointBuy,
+    fasteners: bom.fasteners,
+    panels:    panels.map(p => ({ code: p.code, name: p.name, section: p.section, qty: p.instances.length })),
+    motor:     motorBuy,
+  },
+  totals: {
+    parts:        parts.length,
+    extrusions:   extrusions.reduce((s, e) => s + e.instances.length, 0),
+    joints:       jointList.length,
+    profileLen_mm: extrusions.reduce((s, e) => s + (typeof e.length === 'number' ? e.length * e.instances.length : 0), 0),
+  },
+};
+
+fs.writeFileSync(path.join(__dirname, '..', 'docs', 'onshape-spec.json'), JSON.stringify(spec, null, 2));
+
+// ============================================================
+// 4. 输出 Markdown（人读，照着搭 Onshape）
+// ============================================================
+
+function md_paramsTable(p) {
+  return Object.entries(p).map(([k, v]) => `| \`${k}\` | ${v} | mm |`).join('\n');
+}
+
+function md_extrusionsTable(arr) {
+  return arr.map(e => {
+    const inst = e.instances.map((i, k) =>
+      `    ${e.code}-${k + 1}: origin=(${i.origin.join(', ')}), size=(${i.size.join(' × ')})`
+    ).join('\n');
+    return `\n### ${e.code} — ${e.name}\n` +
+           `- 截面：**${e.profile}** (${e.section})\n` +
+           `- 长度：${e.length}mm\n` +
+           `- 数量：${e.instances.length}\n` +
+           `- 实例（原点 + 包围盒尺寸 mm）：\n\`\`\`\n${inst}\n\`\`\``;
+  }).join('\n');
+}
+
+function md_jointsTable(arr) {
+  // 按 spec 分组
+  const bySpec = {};
+  arr.forEach(j => { (bySpec[j.spec] = bySpec[j.spec] || []).push(j); });
+  return Object.entries(bySpec).map(([spec, js]) => {
+    const rows = js.map(j =>
+      `| ${j.id} | ${j.loc} | ${j.pos.join(', ')} | ${j.qty} | ${Object.entries(j.screws).map(([k, v]) => `${k}×${v}`).join(' + ') || '—'} |`
+    ).join('\n');
+    return `\n### ${spec} — ${js[0].specName} （${js.length} 个节点）\n\n` +
+           `| Node ID | 位置描述 | 坐标 (x, y, z) | 数量 | 紧固件 |\n` +
+           `|---|---|---|---|---|\n${rows}`;
+  }).join('\n');
+}
+
+function md_shopping(s) {
+  let out = '\n### 4.1 型材定长切割单（淘宝下单或本地切割）\n\n';
+  out += `| 规格 | 数量 |\n|---|---|\n` +
+         Object.entries(s.profiles).map(([k, v]) => `| ${k} | ${v} 根 |`).join('\n');
+  out += '\n\n### 4.2 角码 / 卡扣 / 滑轨\n\n';
+  out += `| 编号 | 数量 | 规格说明 |\n|---|---|---|\n` +
+         Object.entries(s.joints).map(([code, qty]) =>
+           `| ${code} | ${qty} 块 | ${M.JOINT_SPECS[code] ? M.JOINT_SPECS[code].mat : '—'} |`).join('\n');
+  out += '\n\n### 4.3 紧固件\n\n';
+  out += `| 编号 | 数量 | 规格 |\n|---|---|---|\n` +
+         Object.entries(s.fasteners).map(([code, qty]) =>
+           `| ${code} | ${qty} 套 | ${M.FASTENERS[code] ? M.FASTENERS[code].name : '—'} |`).join('\n');
+  out += '\n\n### 4.4 太阳能板\n\n';
+  out += `| 编号 | 数量 | 规格 |\n|---|---|---|\n` +
+         s.panels.map(p => `| ${p.code} | ${p.qty} 张 | ${p.section} |`).join('\n');
+  out += '\n\n> ⚠️ **延展板 PA2 电池片反向定制**：跟柔性板厂家说明"电池片装在背板的另一面"。\n';
+  out += '\n### 4.5 电动接口（D22 占位，型号待选）\n\n';
+  out += `| 编号 | 数量 | 规格说明 |\n|---|---|---|\n` +
+         Object.entries(s.motor).map(([code, qty]) =>
+           `| ${code} | ${qty} 件 | ${M.JOINT_SPECS[code] ? M.JOINT_SPECS[code].mat : '—'} |`).join('\n');
+  return out;
+}
+
+const dt = new Date().toISOString().slice(0, 10);
+const md = `# Onshape 建模工程描述
+
+> ⚙️ **本文件由 \`scripts/gen-onshape-spec.js\` 从 \`cad/model.js\` 自动生成，请勿手改。**
+> 改设计 → 改 model.js → \`node scripts/gen-onshape-spec.js\` 重生成此文档。
+> 同时输出 \`docs/onshape-spec.json\` 供 Phase 2 FeatureScript 生成器使用。
+>
+> 配套来源：commit \`${spec.scriptVersion}\` · 生成日期 ${dt}
+
+## 总览
+
+| 维度 | 值 |
+|---|---|
+| 零件总数（含 marker） | ${spec.totals.parts} |
+| 型材实例 | ${spec.totals.extrusions} |
+| 连接节点 | ${spec.totals.joints} |
+| 型材总长 | ${(spec.totals.profileLen_mm / 1000).toFixed(2)} m |
+| 箱体外尺寸 | ${spec.params.railSpacing} × ${spec.params.railLength} × ${75 + spec.params.boxHeight + 40 + 6}mm（W × L × H 含 PT 顶板）|
+
+---
+
+## 1. 主控参数（在 Onshape Part Studio 创建 Variables）
+
+| 变量名 | 默认值 | 单位 |
+|---|---|---|
+${md_paramsTable(spec.params)}
+
+**常量**（不在 Variables 里，直接在 Sketch 用数字）：
+
+| 名称 | 值 | 含义 |
+|---|---|---|
+| \`P40\` | 40 | 4040 截面 |
+| \`P20\` | 20 | 2020 截面 |
+| \`panelW\` | 1000 | 板 x 方向宽 |
+| \`panelL\` | 1120 | 板 y 方向长 |
+| \`zBot\` | 35 | OEM 导轨抬高（待实测）|
+
+---
+
+## 2. 型材清单（按建模顺序）
+
+> 每个零件用 Onshape 的 **Sketch + Extrude** 建：先在 X-Y 平面画 40×40 或 20×20 方框，再 Extrude 到目标长度。
+> 然后用 **Linear Pattern** 或 **Mirror** 复制其他实例。
+> 装配在 Assembly 里用 Mate（详见 §3）。
+
+### 2.1 箱体骨架（结构件 struct）
+${md_extrusionsTable(extrusions.filter(e => e.cat === 'struct'))}
+
+### 2.2 吊装托盘（tray）
+${md_extrusionsTable(extrusions.filter(e => e.cat === 'tray'))}
+
+### 2.3 滑轨 / 合页（slide）
+${md_extrusionsTable(slideHinge)}
+
+### 2.4 太阳能板（panel）
+${panels.map(p => `\n#### ${p.code} — ${p.name}\n- 规格：${p.section}\n- 数量：${p.instances.length}\n- 厚度：${p.instances[0].size[2]}mm\n- 默认位置（原点）：(${p.instances[0].origin.join(', ')})`).join('\n')}
+
+### 2.5 水箱
+${tank[0] ? `- ${tank[0].code} — ${tank[0].name}\n- 截面：${tank[0].section}\n- 位置：(${tank[0].instances[0].origin.join(', ')})` : '无'}
+
+---
+
+## 3. 装配 Mate 表
+
+> 每个节点 = 在 Onshape Assembly 里加一个 Mate（Fastened / Slider / Cylindrical 等）。
+> 节点的 \`spec\` 决定用哪种角码 / 卡扣（详见 §4.2 采购清单）。
+> \`pos\` 是节点中心坐标（mm），用作 Onshape Mate Connector 的定位参考。
+
+${md_jointsTable(jointList)}
+
+---
+
+## 4. 采购清单（一站式下单）
+
+${md_shopping(spec.shoppingList)}
+
+---
+
+## 5. Onshape 建模建议顺序
+
+1. **新建 Document** \`woodstock-roof\`
+2. **新建 Part Studio "Frame-Skeleton"**
+   - 创建 §1 的所有 Variables
+   - 按 §2.1 顺序建 M1/M2/C1/T1/T2/S1/S2/S3（先 Sketch 截面 → Extrude → Pattern）
+   - 用 Linear Pattern 复制对称实例
+3. **新建 Part Studio "Tray"**
+   - 按 §2.2 建 D1-D4
+4. **新建 Part Studio "Slide-Hinge"**
+   - 按 §2.3 建 R1/K2
+5. **新建 Part Studio "Panels"**
+   - 按 §2.4 建 PA1/PA2/PC/PT（用 Surface 或薄 Solid）
+6. **新建 Assembly "Roof-Rack"**
+   - Insert 上面所有 Part Studio 的零件
+   - 按 §3 Mate 表逐节点加 Mate
+7. **标准件**：从 MISUMI / McMaster-Carr 拖角码 + 螺丝 + T 螺母（按 §4 数量）
+8. **干涉检查**：Assembly → Interference Check → 应该 0 处（我们已经在 model.js 里跑过）
+
+---
+
+## 6. 下一步（Phase 2）
+
+我会写一段 **Onshape FeatureScript** 代码（基于 \`docs/onshape-spec.json\`）：
+- 输入：本 JSON
+- 输出：自动生成所有 §2 型材的 Part Studio
+- 你只需在 Onshape Custom Feature 里粘贴 FS 代码 + 选 JSON → 一键生成骨架
+
+需要你先准备：
+- ✅ Onshape 免费 Public 账号（[onshape.com/cad-software](https://www.onshape.com/cad-software)）
+- ✅ 看 1 个 30 分钟官方 Custom Feature tutorial
+- ✅ 跟我说"准备好了"，我开始写 FeatureScript
+`;
+
+fs.writeFileSync(path.join(__dirname, '..', 'docs', 'onshape-spec.md'), md);
+
+console.log(`[gen-onshape-spec] docs/onshape-spec.md + docs/onshape-spec.json 已更新`);
+console.log(`  零件 ${spec.totals.parts} 件 / 型材实例 ${spec.totals.extrusions} / 节点 ${spec.totals.joints} / 型材 ${(spec.totals.profileLen_mm / 1000).toFixed(2)}m`);

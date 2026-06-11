@@ -1,0 +1,1642 @@
+{
+  "version": "1.0",
+  "source": "cad/model.js",
+  "scriptVersion": "7862a57",
+  "params": {
+    "railSpacing": 1020,
+    "railLength": 1300,
+    "boxHeight": 130,
+    "panelTravel": 1000,
+    "deploy": 0,
+    "flip": 0,
+    "tankH": 70
+  },
+  "constants": {
+    "P40": 40,
+    "P20": 20,
+    "panelW": 1000,
+    "panelL": 1120,
+    "zBot": 35
+  },
+  "extrusions": [
+    {
+      "code": "M1",
+      "name": "底框纵梁",
+      "profile": "4040 铝型材",
+      "section": "40×40",
+      "length": 1300,
+      "cat": "struct",
+      "instances": [
+        {
+          "origin": [
+            0,
+            0,
+            35
+          ],
+          "size": [
+            40,
+            1300,
+            40
+          ]
+        },
+        {
+          "origin": [
+            980,
+            0,
+            35
+          ],
+          "size": [
+            40,
+            1300,
+            40
+          ]
+        }
+      ]
+    },
+    {
+      "code": "M2",
+      "name": "底框横梁",
+      "profile": "4040 铝型材",
+      "section": "40×40",
+      "length": 940,
+      "cat": "struct",
+      "instances": [
+        {
+          "origin": [
+            40,
+            0,
+            35
+          ],
+          "size": [
+            940,
+            40,
+            40
+          ]
+        },
+        {
+          "origin": [
+            40,
+            1260,
+            35
+          ],
+          "size": [
+            940,
+            40,
+            40
+          ]
+        }
+      ]
+    },
+    {
+      "code": "C1",
+      "name": "角立柱",
+      "profile": "4040 铝型材",
+      "section": "40×40",
+      "length": 130,
+      "cat": "struct",
+      "instances": [
+        {
+          "origin": [
+            0,
+            0,
+            75
+          ],
+          "size": [
+            40,
+            40,
+            130
+          ]
+        },
+        {
+          "origin": [
+            980,
+            0,
+            75
+          ],
+          "size": [
+            40,
+            40,
+            130
+          ]
+        },
+        {
+          "origin": [
+            0,
+            1260,
+            75
+          ],
+          "size": [
+            40,
+            40,
+            130
+          ]
+        },
+        {
+          "origin": [
+            980,
+            1260,
+            75
+          ],
+          "size": [
+            40,
+            40,
+            130
+          ]
+        }
+      ]
+    },
+    {
+      "code": "T1",
+      "name": "顶框纵梁",
+      "profile": "4040 铝型材",
+      "section": "40×40",
+      "length": 1300,
+      "cat": "struct",
+      "instances": [
+        {
+          "origin": [
+            0,
+            0,
+            205
+          ],
+          "size": [
+            40,
+            1300,
+            40
+          ]
+        },
+        {
+          "origin": [
+            980,
+            0,
+            205
+          ],
+          "size": [
+            40,
+            1300,
+            40
+          ]
+        }
+      ]
+    },
+    {
+      "code": "T2",
+      "name": "顶框横梁",
+      "profile": "2020 铝型材",
+      "section": "20×20",
+      "length": 940,
+      "cat": "struct",
+      "instances": [
+        {
+          "origin": [
+            40,
+            0,
+            225
+          ],
+          "size": [
+            940,
+            20,
+            20
+          ]
+        },
+        {
+          "origin": [
+            40,
+            1280,
+            225
+          ],
+          "size": [
+            940,
+            20,
+            20
+          ]
+        },
+        {
+          "origin": [
+            40,
+            640,
+            225
+          ],
+          "size": [
+            940,
+            20,
+            20
+          ]
+        }
+      ]
+    },
+    {
+      "code": "S1",
+      "name": "中央竖撑",
+      "profile": "2020 铝型材",
+      "section": "20×20",
+      "length": 60,
+      "cat": "struct",
+      "instances": [
+        {
+          "origin": [
+            500,
+            0,
+            75
+          ],
+          "size": [
+            20,
+            20,
+            60
+          ]
+        },
+        {
+          "origin": [
+            500,
+            1280,
+            75
+          ],
+          "size": [
+            20,
+            20,
+            60
+          ]
+        }
+      ]
+    },
+    {
+      "code": "S2",
+      "name": "中央吊撑",
+      "profile": "2020 铝型材",
+      "section": "20×20",
+      "length": 70,
+      "cat": "struct",
+      "instances": [
+        {
+          "origin": [
+            500,
+            640,
+            155
+          ],
+          "size": [
+            20,
+            20,
+            70
+          ]
+        }
+      ]
+    },
+    {
+      "code": "S3",
+      "name": "前后端中央立柱",
+      "profile": "2020 铝型材",
+      "section": "20×20",
+      "length": 70,
+      "cat": "struct",
+      "instances": [
+        {
+          "origin": [
+            500,
+            0,
+            155
+          ],
+          "size": [
+            20,
+            20,
+            70
+          ]
+        },
+        {
+          "origin": [
+            500,
+            1280,
+            155
+          ],
+          "size": [
+            20,
+            20,
+            70
+          ]
+        }
+      ]
+    },
+    {
+      "code": "D2",
+      "name": "托盘纵向边梁",
+      "profile": "2020 铝型材",
+      "section": "20×20",
+      "length": 1220,
+      "cat": "tray",
+      "instances": [
+        {
+          "origin": [
+            20,
+            40,
+            135
+          ],
+          "size": [
+            20,
+            1220,
+            20
+          ]
+        },
+        {
+          "origin": [
+            980,
+            40,
+            135
+          ],
+          "size": [
+            20,
+            1220,
+            20
+          ]
+        }
+      ]
+    },
+    {
+      "code": "D1",
+      "name": "托盘中段吊柱",
+      "profile": "2020 铝型材",
+      "section": "20×20",
+      "length": 50,
+      "cat": "tray",
+      "instances": [
+        {
+          "origin": [
+            20,
+            640,
+            155
+          ],
+          "size": [
+            20,
+            20,
+            50
+          ]
+        },
+        {
+          "origin": [
+            980,
+            640,
+            155
+          ],
+          "size": [
+            20,
+            20,
+            50
+          ]
+        }
+      ]
+    },
+    {
+      "code": "D3",
+      "name": "托盘承托横档",
+      "profile": "2020 铝型材",
+      "section": "20×20",
+      "length": 940,
+      "cat": "tray",
+      "instances": [
+        {
+          "origin": [
+            40,
+            0,
+            135
+          ],
+          "size": [
+            940,
+            20,
+            20
+          ]
+        },
+        {
+          "origin": [
+            40,
+            315,
+            135
+          ],
+          "size": [
+            940,
+            20,
+            20
+          ]
+        },
+        {
+          "origin": [
+            40,
+            640,
+            135
+          ],
+          "size": [
+            940,
+            20,
+            20
+          ]
+        },
+        {
+          "origin": [
+            40,
+            965,
+            135
+          ],
+          "size": [
+            940,
+            20,
+            20
+          ]
+        },
+        {
+          "origin": [
+            40,
+            1280,
+            135
+          ],
+          "size": [
+            940,
+            20,
+            20
+          ]
+        }
+      ]
+    },
+    {
+      "code": "D4",
+      "name": "托盘中央纵梁",
+      "profile": "2020 铝型材",
+      "section": "20×20",
+      "length": 1300,
+      "cat": "tray",
+      "instances": [
+        {
+          "origin": [
+            500,
+            0,
+            135
+          ],
+          "size": [
+            20,
+            1300,
+            20
+          ]
+        }
+      ]
+    }
+  ],
+  "slideHinge": [
+    {
+      "code": "R1",
+      "name": "扁装三节滑轨(前)",
+      "profile": "钢制 27×12.7×1000",
+      "section": "—",
+      "length": 1000,
+      "cat": "slide",
+      "instances": [
+        {
+          "origin": [
+            10,
+            40,
+            75
+          ],
+          "size": [
+            1000,
+            12,
+            27
+          ]
+        },
+        {
+          "origin": [
+            10,
+            1248,
+            75
+          ],
+          "size": [
+            1000,
+            12,
+            27
+          ]
+        }
+      ]
+    },
+    {
+      "code": "K2",
+      "name": "钢琴合页 SS304 1120mm",
+      "profile": "SS304 钢琴合页",
+      "section": "—",
+      "length": 1120,
+      "cat": "slide",
+      "instances": [
+        {
+          "origin": [
+            7,
+            90,
+            108
+          ],
+          "size": [
+            6,
+            1120,
+            3
+          ]
+        }
+      ]
+    }
+  ],
+  "panels": [
+    {
+      "code": "PC",
+      "name": "太阳能板C(下挂前抽)",
+      "profile": "ETFE 柔性板",
+      "section": "1000×1120 + 3mm 铝塑",
+      "length": "—",
+      "cat": "panel",
+      "instances": [
+        {
+          "origin": [
+            10,
+            0,
+            23
+          ],
+          "size": [
+            1000,
+            1120,
+            6
+          ]
+        }
+      ]
+    },
+    {
+      "code": "PA1",
+      "name": "太阳能板A主板",
+      "profile": "ETFE 柔性 + 3mm 铝塑",
+      "section": "1000×1120",
+      "length": "—",
+      "cat": "panel",
+      "instances": [
+        {
+          "origin": [
+            10,
+            90,
+            102
+          ],
+          "size": [
+            1000,
+            1120,
+            6
+          ]
+        }
+      ]
+    },
+    {
+      "code": "PA2",
+      "name": "太阳能板A延展板",
+      "profile": "ETFE 柔性 + 5mm 蜂窝铝",
+      "section": "1000×1120",
+      "length": "—",
+      "cat": "panel",
+      "instances": [
+        {
+          "origin": [
+            10,
+            90,
+            111
+          ],
+          "size": [
+            1000,
+            1120,
+            8
+          ]
+        }
+      ]
+    },
+    {
+      "code": "PT",
+      "name": "顶板(固定)",
+      "profile": "ETFE 柔性 + 3mm 铝塑",
+      "section": "1000×590",
+      "length": "—",
+      "cat": "panel",
+      "instances": [
+        {
+          "origin": [
+            10,
+            40,
+            245
+          ],
+          "size": [
+            1000,
+            590,
+            6
+          ]
+        }
+      ]
+    }
+  ],
+  "tank": {
+    "code": "WT",
+    "name": "扁平水箱",
+    "profile": "不锈钢扁箱",
+    "section": "940×570×70",
+    "length": "—",
+    "cat": "tank",
+    "instances": [
+      {
+        "origin": [
+          40,
+          40,
+          155
+        ],
+        "size": [
+          940,
+          570,
+          50
+        ]
+      }
+    ]
+  },
+  "joints": [
+    {
+      "id": "J01",
+      "loc": "底框左前角(C1↔M1↔M2)",
+      "spec": "A2",
+      "specName": "4040 重型加强角码",
+      "cat": "conn",
+      "pos": [
+        0,
+        0,
+        75
+      ],
+      "qty": 1,
+      "screws": {
+        "B1": 4
+      }
+    },
+    {
+      "id": "J02",
+      "loc": "底框右前角",
+      "spec": "A2",
+      "specName": "4040 重型加强角码",
+      "cat": "conn",
+      "pos": [
+        960,
+        0,
+        75
+      ],
+      "qty": 1,
+      "screws": {
+        "B1": 4
+      }
+    },
+    {
+      "id": "J03",
+      "loc": "底框左后角",
+      "spec": "A2",
+      "specName": "4040 重型加强角码",
+      "cat": "conn",
+      "pos": [
+        0,
+        1240,
+        75
+      ],
+      "qty": 1,
+      "screws": {
+        "B1": 4
+      }
+    },
+    {
+      "id": "J04",
+      "loc": "底框右后角",
+      "spec": "A2",
+      "specName": "4040 重型加强角码",
+      "cat": "conn",
+      "pos": [
+        960,
+        1240,
+        75
+      ],
+      "qty": 1,
+      "screws": {
+        "B1": 4
+      }
+    },
+    {
+      "id": "J07",
+      "loc": "S1前底接M2",
+      "spec": "A3",
+      "specName": "2020 标准 L 角码",
+      "cat": "conn",
+      "pos": [
+        500,
+        20,
+        75
+      ],
+      "qty": 2,
+      "screws": {
+        "B2": 2
+      }
+    },
+    {
+      "id": "J08",
+      "loc": "S1后底接M2",
+      "spec": "A3",
+      "specName": "2020 标准 L 角码",
+      "cat": "conn",
+      "pos": [
+        500,
+        1260,
+        75
+      ],
+      "qty": 2,
+      "screws": {
+        "B2": 2
+      }
+    },
+    {
+      "id": "J09",
+      "loc": "顶框左前角(C1↔T1↔T2)",
+      "spec": "A2",
+      "specName": "4040 重型加强角码",
+      "cat": "conn",
+      "pos": [
+        0,
+        0,
+        185
+      ],
+      "qty": 1,
+      "screws": {
+        "B1": 4
+      }
+    },
+    {
+      "id": "J10",
+      "loc": "顶框右前角",
+      "spec": "A2",
+      "specName": "4040 重型加强角码",
+      "cat": "conn",
+      "pos": [
+        960,
+        0,
+        185
+      ],
+      "qty": 1,
+      "screws": {
+        "B1": 4
+      }
+    },
+    {
+      "id": "J11",
+      "loc": "顶框左后角",
+      "spec": "A2",
+      "specName": "4040 重型加强角码",
+      "cat": "conn",
+      "pos": [
+        0,
+        1240,
+        185
+      ],
+      "qty": 1,
+      "screws": {
+        "B1": 4
+      }
+    },
+    {
+      "id": "J12",
+      "loc": "顶框右后角",
+      "spec": "A2",
+      "specName": "4040 重型加强角码",
+      "cat": "conn",
+      "pos": [
+        960,
+        1240,
+        185
+      ],
+      "qty": 1,
+      "screws": {
+        "B1": 4
+      }
+    },
+    {
+      "id": "J13",
+      "loc": "T2中横L端接T1",
+      "spec": "A4",
+      "specName": "4040↔2020 转接 L 角码",
+      "cat": "conn",
+      "pos": [
+        20,
+        640,
+        225
+      ],
+      "qty": 1,
+      "screws": {
+        "B1": 2,
+        "B2": 2
+      }
+    },
+    {
+      "id": "J14",
+      "loc": "T2中横R端接T1",
+      "spec": "A4",
+      "specName": "4040↔2020 转接 L 角码",
+      "cat": "conn",
+      "pos": [
+        960,
+        640,
+        225
+      ],
+      "qty": 1,
+      "screws": {
+        "B1": 2,
+        "B2": 2
+      }
+    },
+    {
+      "id": "J15",
+      "loc": "S2顶接T2中横",
+      "spec": "A3",
+      "specName": "2020 标准 L 角码",
+      "cat": "conn",
+      "pos": [
+        500,
+        640,
+        225
+      ],
+      "qty": 2,
+      "screws": {
+        "B2": 2
+      }
+    },
+    {
+      "id": "J16",
+      "loc": "S3前顶接T2前横",
+      "spec": "A3",
+      "specName": "2020 标准 L 角码",
+      "cat": "conn",
+      "pos": [
+        500,
+        20,
+        225
+      ],
+      "qty": 2,
+      "screws": {
+        "B2": 2
+      }
+    },
+    {
+      "id": "J17",
+      "loc": "S3后顶接T2后横",
+      "spec": "A3",
+      "specName": "2020 标准 L 角码",
+      "cat": "conn",
+      "pos": [
+        500,
+        1260,
+        225
+      ],
+      "qty": 2,
+      "screws": {
+        "B2": 2
+      }
+    },
+    {
+      "id": "J18",
+      "loc": "D2左前接C1",
+      "spec": "A4",
+      "specName": "4040↔2020 转接 L 角码",
+      "cat": "conn",
+      "pos": [
+        0,
+        40,
+        135
+      ],
+      "qty": 1,
+      "screws": {
+        "B1": 2,
+        "B2": 2
+      }
+    },
+    {
+      "id": "J19",
+      "loc": "D2左后接C1",
+      "spec": "A4",
+      "specName": "4040↔2020 转接 L 角码",
+      "cat": "conn",
+      "pos": [
+        0,
+        1200,
+        135
+      ],
+      "qty": 1,
+      "screws": {
+        "B1": 2,
+        "B2": 2
+      }
+    },
+    {
+      "id": "J20",
+      "loc": "D2右前接C1",
+      "spec": "A4",
+      "specName": "4040↔2020 转接 L 角码",
+      "cat": "conn",
+      "pos": [
+        960,
+        40,
+        135
+      ],
+      "qty": 1,
+      "screws": {
+        "B1": 2,
+        "B2": 2
+      }
+    },
+    {
+      "id": "J21",
+      "loc": "D2右后接C1",
+      "spec": "A4",
+      "specName": "4040↔2020 转接 L 角码",
+      "cat": "conn",
+      "pos": [
+        960,
+        1200,
+        135
+      ],
+      "qty": 1,
+      "screws": {
+        "B1": 2,
+        "B2": 2
+      }
+    },
+    {
+      "id": "J58",
+      "loc": "D1左底接D2",
+      "spec": "A3",
+      "specName": "2020 标准 L 角码",
+      "cat": "conn",
+      "pos": [
+        20,
+        640,
+        155
+      ],
+      "qty": 1,
+      "screws": {
+        "B2": 2
+      }
+    },
+    {
+      "id": "J59",
+      "loc": "D1右底接D2",
+      "spec": "A3",
+      "specName": "2020 标准 L 角码",
+      "cat": "conn",
+      "pos": [
+        980,
+        640,
+        155
+      ],
+      "qty": 1,
+      "screws": {
+        "B2": 2
+      }
+    },
+    {
+      "id": "J60",
+      "loc": "D1左顶接T1",
+      "spec": "A4",
+      "specName": "4040↔2020 转接 L 角码",
+      "cat": "conn",
+      "pos": [
+        20,
+        640,
+        185
+      ],
+      "qty": 1,
+      "screws": {
+        "B1": 2,
+        "B2": 2
+      }
+    },
+    {
+      "id": "J61",
+      "loc": "D1右顶接T1",
+      "spec": "A4",
+      "specName": "4040↔2020 转接 L 角码",
+      "cat": "conn",
+      "pos": [
+        980,
+        640,
+        185
+      ],
+      "qty": 1,
+      "screws": {
+        "B1": 2,
+        "B2": 2
+      }
+    },
+    {
+      "id": "J37",
+      "loc": "S1前顶接D4",
+      "spec": "A3",
+      "specName": "2020 标准 L 角码",
+      "cat": "conn",
+      "pos": [
+        500,
+        20,
+        135
+      ],
+      "qty": 2,
+      "screws": {
+        "B2": 2
+      }
+    },
+    {
+      "id": "J38",
+      "loc": "S1后顶接D4",
+      "spec": "A3",
+      "specName": "2020 标准 L 角码",
+      "cat": "conn",
+      "pos": [
+        500,
+        1260,
+        135
+      ],
+      "qty": 2,
+      "screws": {
+        "B2": 2
+      }
+    },
+    {
+      "id": "J39",
+      "loc": "S2底接D4中",
+      "spec": "A3",
+      "specName": "2020 标准 L 角码",
+      "cat": "conn",
+      "pos": [
+        500,
+        640,
+        155
+      ],
+      "qty": 2,
+      "screws": {
+        "B2": 2
+      }
+    },
+    {
+      "id": "J40",
+      "loc": "S3前底接D4",
+      "spec": "A3",
+      "specName": "2020 标准 L 角码",
+      "cat": "conn",
+      "pos": [
+        500,
+        20,
+        155
+      ],
+      "qty": 2,
+      "screws": {
+        "B2": 2
+      }
+    },
+    {
+      "id": "J41",
+      "loc": "S3后底接D4",
+      "spec": "A3",
+      "specName": "2020 标准 L 角码",
+      "cat": "conn",
+      "pos": [
+        500,
+        1260,
+        155
+      ],
+      "qty": 2,
+      "screws": {
+        "B2": 2
+      }
+    },
+    {
+      "id": "J22",
+      "loc": "D3#1×D2L",
+      "spec": "A3",
+      "specName": "2020 标准 L 角码",
+      "cat": "conn",
+      "pos": [
+        40,
+        65,
+        135
+      ],
+      "qty": 1,
+      "screws": {
+        "B2": 2
+      }
+    },
+    {
+      "id": "J23",
+      "loc": "D3#1×D2R",
+      "spec": "A3",
+      "specName": "2020 标准 L 角码",
+      "cat": "conn",
+      "pos": [
+        960,
+        65,
+        135
+      ],
+      "qty": 1,
+      "screws": {
+        "B2": 2
+      }
+    },
+    {
+      "id": "J24",
+      "loc": "D3#2×D2L",
+      "spec": "A3",
+      "specName": "2020 标准 L 角码",
+      "cat": "conn",
+      "pos": [
+        40,
+        315,
+        135
+      ],
+      "qty": 1,
+      "screws": {
+        "B2": 2
+      }
+    },
+    {
+      "id": "J25",
+      "loc": "D3#2×D2R",
+      "spec": "A3",
+      "specName": "2020 标准 L 角码",
+      "cat": "conn",
+      "pos": [
+        960,
+        315,
+        135
+      ],
+      "qty": 1,
+      "screws": {
+        "B2": 2
+      }
+    },
+    {
+      "id": "J26",
+      "loc": "D3#3×D2L",
+      "spec": "A3",
+      "specName": "2020 标准 L 角码",
+      "cat": "conn",
+      "pos": [
+        40,
+        640,
+        135
+      ],
+      "qty": 1,
+      "screws": {
+        "B2": 2
+      }
+    },
+    {
+      "id": "J27",
+      "loc": "D3#3×D2R",
+      "spec": "A3",
+      "specName": "2020 标准 L 角码",
+      "cat": "conn",
+      "pos": [
+        960,
+        640,
+        135
+      ],
+      "qty": 1,
+      "screws": {
+        "B2": 2
+      }
+    },
+    {
+      "id": "J28",
+      "loc": "D3#4×D2L",
+      "spec": "A3",
+      "specName": "2020 标准 L 角码",
+      "cat": "conn",
+      "pos": [
+        40,
+        965,
+        135
+      ],
+      "qty": 1,
+      "screws": {
+        "B2": 2
+      }
+    },
+    {
+      "id": "J29",
+      "loc": "D3#4×D2R",
+      "spec": "A3",
+      "specName": "2020 标准 L 角码",
+      "cat": "conn",
+      "pos": [
+        960,
+        965,
+        135
+      ],
+      "qty": 1,
+      "screws": {
+        "B2": 2
+      }
+    },
+    {
+      "id": "J30",
+      "loc": "D3#5×D2L",
+      "spec": "A3",
+      "specName": "2020 标准 L 角码",
+      "cat": "conn",
+      "pos": [
+        40,
+        1255,
+        135
+      ],
+      "qty": 1,
+      "screws": {
+        "B2": 2
+      }
+    },
+    {
+      "id": "J31",
+      "loc": "D3#5×D2R",
+      "spec": "A3",
+      "specName": "2020 标准 L 角码",
+      "cat": "conn",
+      "pos": [
+        960,
+        1255,
+        135
+      ],
+      "qty": 1,
+      "screws": {
+        "B2": 2
+      }
+    },
+    {
+      "id": "J32",
+      "loc": "D4×D3#1",
+      "spec": "A3",
+      "specName": "2020 标准 L 角码",
+      "cat": "conn",
+      "pos": [
+        500,
+        40,
+        135
+      ],
+      "qty": 1,
+      "screws": {
+        "B2": 2
+      }
+    },
+    {
+      "id": "J33",
+      "loc": "D4×D3#2",
+      "spec": "A3",
+      "specName": "2020 标准 L 角码",
+      "cat": "conn",
+      "pos": [
+        500,
+        315,
+        135
+      ],
+      "qty": 1,
+      "screws": {
+        "B2": 2
+      }
+    },
+    {
+      "id": "J34",
+      "loc": "D4×D3#3",
+      "spec": "A3",
+      "specName": "2020 标准 L 角码",
+      "cat": "conn",
+      "pos": [
+        500,
+        640,
+        135
+      ],
+      "qty": 1,
+      "screws": {
+        "B2": 2
+      }
+    },
+    {
+      "id": "J35",
+      "loc": "D4×D3#4",
+      "spec": "A3",
+      "specName": "2020 标准 L 角码",
+      "cat": "conn",
+      "pos": [
+        500,
+        965,
+        135
+      ],
+      "qty": 1,
+      "screws": {
+        "B2": 2
+      }
+    },
+    {
+      "id": "J36",
+      "loc": "D4×D3#5",
+      "spec": "A3",
+      "specName": "2020 标准 L 角码",
+      "cat": "conn",
+      "pos": [
+        500,
+        1280,
+        135
+      ],
+      "qty": 1,
+      "screws": {
+        "B2": 2
+      }
+    },
+    {
+      "id": "J42",
+      "loc": "左U卡扣前点(连车)",
+      "spec": "U1",
+      "specName": "4040 U 卡扣（连车）",
+      "cat": "conn",
+      "pos": [
+        0,
+        120,
+        5
+      ],
+      "qty": 1,
+      "screws": {}
+    },
+    {
+      "id": "J43",
+      "loc": "右U卡扣前点(连车)",
+      "spec": "U1",
+      "specName": "4040 U 卡扣（连车）",
+      "cat": "conn",
+      "pos": [
+        980,
+        120,
+        5
+      ],
+      "qty": 1,
+      "screws": {}
+    },
+    {
+      "id": "J44",
+      "loc": "左U卡扣后点(连车)",
+      "spec": "U1",
+      "specName": "4040 U 卡扣（连车）",
+      "cat": "conn",
+      "pos": [
+        0,
+        1120,
+        5
+      ],
+      "qty": 1,
+      "screws": {}
+    },
+    {
+      "id": "J45",
+      "loc": "右U卡扣后点(连车)",
+      "spec": "U1",
+      "specName": "4040 U 卡扣（连车）",
+      "cat": "conn",
+      "pos": [
+        980,
+        1120,
+        5
+      ],
+      "qty": 1,
+      "screws": {}
+    },
+    {
+      "id": "J46",
+      "loc": "水箱前左角压片",
+      "spec": "K1",
+      "specName": "水箱角压片",
+      "cat": "conn",
+      "pos": [
+        45,
+        45,
+        205
+      ],
+      "qty": 1,
+      "screws": {
+        "B2": 2
+      }
+    },
+    {
+      "id": "J47",
+      "loc": "水箱前右角压片",
+      "spec": "K1",
+      "specName": "水箱角压片",
+      "cat": "conn",
+      "pos": [
+        960,
+        45,
+        205
+      ],
+      "qty": 1,
+      "screws": {
+        "B2": 2
+      }
+    },
+    {
+      "id": "J48",
+      "loc": "水箱后左角压片",
+      "spec": "K1",
+      "specName": "水箱角压片",
+      "cat": "conn",
+      "pos": [
+        45,
+        590,
+        205
+      ],
+      "qty": 1,
+      "screws": {
+        "B2": 2
+      }
+    },
+    {
+      "id": "J49",
+      "loc": "水箱后右角压片",
+      "spec": "K1",
+      "specName": "水箱角压片",
+      "cat": "conn",
+      "pos": [
+        960,
+        590,
+        205
+      ],
+      "qty": 1,
+      "screws": {
+        "B2": 2
+      }
+    },
+    {
+      "id": "J50",
+      "loc": "ESP32 控制盒",
+      "spec": "E0",
+      "specName": "ESP32 控制盒（含 L298N）",
+      "cat": "motor",
+      "pos": [
+        900,
+        900,
+        165
+      ],
+      "qty": 1,
+      "screws": {}
+    },
+    {
+      "id": "J51",
+      "loc": "DC 减速电机(滑出)",
+      "spec": "E1",
+      "specName": "DC 减速电机（滑出驱动）",
+      "cat": "motor",
+      "pos": [
+        980,
+        1213,
+        75
+      ],
+      "qty": 1,
+      "screws": {}
+    },
+    {
+      "id": "J52",
+      "loc": "GT2 同步轮(前)",
+      "spec": "E2",
+      "specName": "GT2 同步带轮 / 张紧轮",
+      "cat": "motor",
+      "pos": [
+        890,
+        10,
+        75
+      ],
+      "qty": 1,
+      "screws": {}
+    },
+    {
+      "id": "J53",
+      "loc": "GT2 同步轮(后驱动)",
+      "spec": "E2",
+      "specName": "GT2 同步带轮 / 张紧轮",
+      "cat": "motor",
+      "pos": [
+        890,
+        1270,
+        75
+      ],
+      "qty": 1,
+      "screws": {}
+    },
+    {
+      "id": "J54",
+      "loc": "电动推杆(翻折)",
+      "spec": "E3",
+      "specName": "电动推杆（延展板翻折驱动）",
+      "cat": "motor",
+      "pos": [
+        20,
+        60,
+        102
+      ],
+      "qty": 1,
+      "screws": {}
+    },
+    {
+      "id": "J55",
+      "loc": "限位 · 滑出收回",
+      "spec": "L1",
+      "specName": "限位微动开关",
+      "cat": "motor",
+      "pos": [
+        970,
+        1240,
+        102
+      ],
+      "qty": 1,
+      "screws": {}
+    },
+    {
+      "id": "J56",
+      "loc": "限位 · 滑出全开",
+      "spec": "L1",
+      "specName": "限位微动开关",
+      "cat": "motor",
+      "pos": [
+        5,
+        1240,
+        102
+      ],
+      "qty": 1,
+      "screws": {}
+    },
+    {
+      "id": "J57",
+      "loc": "限位 · 翻折 0°/180°",
+      "spec": "L1",
+      "specName": "限位微动开关",
+      "cat": "motor",
+      "pos": [
+        -5,
+        78,
+        108
+      ],
+      "qty": 1,
+      "screws": {}
+    }
+  ],
+  "shoppingList": {
+    "profiles": {
+      "4040 铝型材 L=1300mm": 4,
+      "4040 铝型材 L=940mm": 2,
+      "4040 铝型材 L=130mm": 4,
+      "2020 铝型材 L=940mm": 8,
+      "2020 铝型材 L=60mm": 2,
+      "2020 铝型材 L=70mm": 3,
+      "2020 铝型材 L=1220mm": 2,
+      "2020 铝型材 L=50mm": 2,
+      "2020 铝型材 L=1300mm": 1
+    },
+    "joints": {
+      "A2": 8,
+      "A3": 37,
+      "A4": 8,
+      "U1": 4,
+      "K1": 4
+    },
+    "fasteners": {
+      "B1": 48,
+      "B2": 98
+    },
+    "panels": [
+      {
+        "code": "PC",
+        "name": "太阳能板C(下挂前抽)",
+        "section": "1000×1120 + 3mm 铝塑",
+        "qty": 1
+      },
+      {
+        "code": "PA1",
+        "name": "太阳能板A主板",
+        "section": "1000×1120",
+        "qty": 1
+      },
+      {
+        "code": "PA2",
+        "name": "太阳能板A延展板",
+        "section": "1000×1120",
+        "qty": 1
+      },
+      {
+        "code": "PT",
+        "name": "顶板(固定)",
+        "section": "1000×590",
+        "qty": 1
+      }
+    ],
+    "motor": {
+      "E0": 1,
+      "E1": 1,
+      "E2": 2,
+      "E3": 1,
+      "L1": 3
+    }
+  },
+  "totals": {
+    "parts": 105,
+    "extrusions": 28,
+    "joints": 59,
+    "profileLen_mm": 19290
+  }
+}

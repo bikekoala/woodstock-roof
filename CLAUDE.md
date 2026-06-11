@@ -61,6 +61,9 @@
 | [cad/model.js](cad/model.js) | ★ **零件单一数据源**（几何+BOM 元数据）。浏览器与 Node 共用。**改零件只改这里。** |
 | [cad/roof-rack-3d.html](cad/roof-rack-3d.html) | **主交互模型**。浏览器打开；拖动旋转、滚轮缩放、右键平移；右上滑块改尺寸联动；左下 BOM；点零件看详情。Three.js(CDN)，无需构建。零件来自 model.js。 |
 | [scripts/gen-bom.js](scripts/gen-bom.js) | 从 model.js 自动生成 docs/bom.md（git commit 时由 pre-commit 钩子自动跑） |
+| [scripts/gen-onshape-spec.js](scripts/gen-onshape-spec.js) | ★ **Onshape 自动化 Phase 1**：从 model.js 输出 docs/onshape-spec.md（人读建模指南）+ docs/onshape-spec.json（机读 FeatureScript 输入）。pre-commit 自动跑 |
+| [docs/onshape-spec.md](docs/onshape-spec.md) | Onshape 建模工程描述（自动生成）—— 主控参数 / 型材清单 / Mate 表 / 采购清单 / 建模顺序 |
+| [docs/onshape-spec.json](docs/onshape-spec.json) | 同上的机器可读版（给 Phase 2 FeatureScript 生成器吃）|
 | [scripts/check-interference.js](scripts/check-interference.js) | ★ **实体干涉自检**：全行程扫描两两 AABB（非法穿插）+ 竖向承力件**承接检查**（悬空/没接上）→ 退出码 1（pre-commit 阻断）。改完几何务必跑一遍 |
 | [docs/design-spec.md](docs/design-spec.md) | 设计规格（尺寸链、层高、材料分配） |
 | [docs/decisions.md](docs/decisions.md) | **决策记录**——每个选择的"为什么"，避免重走弯路 |
