@@ -362,13 +362,11 @@ export const woodstockFrame = defineFeature(function(context is Context, id is I
     {
         if (!definition.confirmGenerate)
             return;
+        // 全部用 createBoxPart 保证位置 100% 正确（绝对坐标 sketch on XY + extrude +z）
+        // 4040/2020 T 槽视觉是另一回事，等位置确认对了再加（见 docs/onshape/todo-tslot.md）
         for (var i = 0; i < size(PARTS); i += 1)
         {
-            var p = PARTS[i];
-            if (p.profile == 4040 || p.profile == 2020)
-                createAluBeam(context, id + ("p" ~ i), p);    // 真 T 槽截面（4040/2020 工业铝型材）
-            else
-                createBoxPart(context, id + ("p" ~ i), p);    // 简化 box（板/水箱/滑轨/合页）
+            createBoxPart(context, id + ("p" ~ i), PARTS[i]);
         }
     });
 
@@ -378,34 +376,35 @@ export const woodstockFrame = defineFeature(function(context is Context, id is I
 // 2020：边长 20，T 槽外口 5mm，槽深 4mm
 // 简化：用矩形凹槽近似真 T 槽内腔（视觉接近，能看到"螺丝孔"）
 // ============================================================
-function tslotPolyline(anchorX is number, anchorY is number, S is number, W is number, D is number) returns array
+function tslotPolyline(S is number, W is number, D is number) returns array
 {
-    // 截面 polyline 顶点（沿外形 + 4 道矩形凹槽逆时针走一圈，单位 mm）
+    // 截面 polyline 顶点（从原点起，沿外形 + 4 道矩形凹槽逆时针走一圈，单位 mm）
+    // body 后续会用 opTransform 平移/旋转到目标位置
     return [
         // 底边 + 底面凹槽
-        [anchorX,             anchorY],
-        [anchorX + S/2 - W/2, anchorY],
-        [anchorX + S/2 - W/2, anchorY + D],
-        [anchorX + S/2 + W/2, anchorY + D],
-        [anchorX + S/2 + W/2, anchorY],
-        [anchorX + S,         anchorY],
+        [0,         0],
+        [S/2 - W/2, 0],
+        [S/2 - W/2, D],
+        [S/2 + W/2, D],
+        [S/2 + W/2, 0],
+        [S,         0],
         // 右边 + 右面凹槽
-        [anchorX + S,         anchorY + S/2 - W/2],
-        [anchorX + S - D,     anchorY + S/2 - W/2],
-        [anchorX + S - D,     anchorY + S/2 + W/2],
-        [anchorX + S,         anchorY + S/2 + W/2],
-        [anchorX + S,         anchorY + S],
+        [S,         S/2 - W/2],
+        [S - D,     S/2 - W/2],
+        [S - D,     S/2 + W/2],
+        [S,         S/2 + W/2],
+        [S,         S],
         // 顶边 + 顶面凹槽
-        [anchorX + S/2 + W/2, anchorY + S],
-        [anchorX + S/2 + W/2, anchorY + S - D],
-        [anchorX + S/2 - W/2, anchorY + S - D],
-        [anchorX + S/2 - W/2, anchorY + S],
-        [anchorX,             anchorY + S],
+        [S/2 + W/2, S],
+        [S/2 + W/2, S - D],
+        [S/2 - W/2, S - D],
+        [S/2 - W/2, S],
+        [0,         S],
         // 左边 + 左面凹槽
-        [anchorX,             anchorY + S/2 + W/2],
-        [anchorX + D,         anchorY + S/2 + W/2],
-        [anchorX + D,         anchorY + S/2 - W/2],
-        [anchorX,             anchorY + S/2 - W/2]
+        [0,         S/2 + W/2],
+        [D,         S/2 + W/2],
+        [D,         S/2 - W/2],
+        [0,         S/2 - W/2]
     ];
 }
 
@@ -414,41 +413,20 @@ function createAluBeam(context is Context, id is Id, part is map)
     var o = part.o;
     var s = part.s;
     var prof = part.profile;
-    // T 槽参数
     var S = prof == 4040 ? 40 : 20;
-    var W = prof == 4040 ? 7  : 5;   // 槽外口宽
-    var D = prof == 4040 ? 6  : 4;   // 槽深
+    var W = prof == 4040 ? 7  : 5;
+    var D = prof == 4040 ? 6  : 4;
 
-    // 找型材长度方向：size 数组里最大的那一维
+    // 找型材长度方向（最大维度）
     var lengthAxis = 0;
     if (s[1] > s[lengthAxis]) lengthAxis = 1;
     if (s[2] > s[lengthAxis]) lengthAxis = 2;
     var depth = s[lengthAxis];
 
-    // 根据长度方向选择 sketch 平面（截面在垂直于长度方向的平面）
-    // 用 PolylinePoints 画截面 polyline
-    var pts;
-    var sketchPlane;
-    var direction;
-    if (lengthAxis == 2) {
-        // 长度沿 z；截面在 xy 平面 z=o[2]
-        sketchPlane = plane(vector(0, 0, o[2]) * millimeter, vector(0, 0, 1));
-        pts = tslotPolyline(o[0], o[1], S, W, D);
-        direction = vector(0, 0, 1);
-    } else if (lengthAxis == 1) {
-        // 长度沿 y；截面在 xz 平面 y=o[1]，截面坐标 (x, z)
-        sketchPlane = plane(vector(0, o[1], 0) * millimeter, vector(0, 1, 0));
-        pts = tslotPolyline(o[0], o[2], S, W, D);
-        direction = vector(0, 1, 0);
-    } else {
-        // 长度沿 x；截面在 yz 平面 x=o[0]，截面坐标 (y, z)
-        sketchPlane = plane(vector(o[0], 0, 0) * millimeter, vector(1, 0, 0));
-        pts = tslotPolyline(o[1], o[2], S, W, D);
-        direction = vector(1, 0, 0);
-    }
-
+    // 1. 在世界 XY 平面原点画 T 槽截面（避免 sketch 平面 orientation 歧义）
+    var sketchPlane = plane(vector(0, 0, 0) * meter, vector(0, 0, 1));
     var sk = newSketchOnPlane(context, id + "section", { "sketchPlane" : sketchPlane });
-    // 逐段画线（skLineSegment 比 skPolyline 兼容性更稳）
+    var pts = tslotPolyline(S, W, D);
     for (var i = 0; i < size(pts); i += 1)
     {
         var p1 = pts[i];
@@ -460,11 +438,32 @@ function createAluBeam(context is Context, id is Id, part is map)
     }
     skSolve(sk);
 
+    // 2. Extrude 沿 +Z，得到 body 在原点：(0,0,0)-(S,S,depth)，长度方向 = +Z
     opExtrude(context, id + "extrude", {
         "entities"  : qSketchRegion(id + "section"),
-        "direction" : direction,
+        "direction" : vector(0, 0, 1),
         "endBound"  : BoundingType.BLIND,
         "endDepth"  : depth * millimeter
+    });
+
+    // 3. opTransform：通过 coordSystem 把 body 从原点旋转 + 平移到 (o, 沿 lengthAxis)
+    //    coordSystem(origin, xAxis, yAxis) 自动算 zAxis = xAxis × yAxis = 目标长度方向
+    var origVec = vector(o[0], o[1], o[2]) * millimeter;
+    var cs;
+    if (lengthAxis == 2) {
+        // 沿 +Z：local = world，只平移
+        cs = coordSystem(origVec, vector(1, 0, 0), vector(0, 1, 0));
+    } else if (lengthAxis == 1) {
+        // 沿 +Y：cs.zAxis = (0,1,0) → 选 xAxis=(0,0,1), yAxis=(1,0,0)
+        cs = coordSystem(origVec, vector(0, 0, 1), vector(1, 0, 0));
+    } else {
+        // 沿 +X：cs.zAxis = (1,0,0) → 选 xAxis=(0,1,0), yAxis=(0,0,1)
+        cs = coordSystem(origVec, vector(0, 1, 0), vector(0, 0, 1));
+    }
+
+    opTransform(context, id + "xform", {
+        "bodies"    : qCreatedBy(id + "extrude", EntityType.BODY),
+        "transform" : toWorld(cs)
     });
 
     setProperty(context, {
