@@ -1,9 +1,9 @@
-FeatureScript 2349;
-import(path : "onshape/std/geometry.fs", version : "2349.0");
+FeatureScript 2625;
+import(path : "onshape/std/geometry.fs", version : "2625.0");
 
 // ============================================================
 // woodstock-roof Frame Generator (Onshape Custom Feature)
-// 自动从 cad/model.js 生成（commit ef0c519 · 2026-06-11）
+// 自动从 cad/model.js 生成（commit 6bf20ff · 2026-06-11）
 // ⚠️ 不要手改本文件 — 改 cad/model.js → commit → 自动重生成
 //
 // 用法（30 秒）：
@@ -61,7 +61,7 @@ annotation { "Feature Type Name" : "Woodstock Frame" }
 export const woodstockFrame = defineFeature(function(context is Context, id is Id, definition is map)
     precondition
     {
-        annotation { "Name" : "生成全部 36 件零件" }
+        annotation { "Name" : "Generate all 36 parts" }
         definition.confirmGenerate is boolean;
     }
     {

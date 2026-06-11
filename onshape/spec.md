@@ -4,7 +4,7 @@
 > 改设计 → 改 model.js → `node scripts/gen-onshape-spec.js` 重生成此文档。
 > 同时输出 `onshape/spec.json` 供 Phase 2 FeatureScript 生成器使用。
 >
-> 配套来源：commit `dd091e0` · 生成日期 2026-06-11
+> 配套来源：commit `6bf20ff` · 生成日期 2026-06-11
 
 ## 总览
 

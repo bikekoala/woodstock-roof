@@ -328,8 +328,8 @@ const partsLiteral = fsItems.map(p =>
   `    { "code" : "${p.code}", "cat" : "${p.cat}", "name" : "${p.name.replace(/"/g, '\\"')}", "o" : ${fsArr(p.o)}, "s" : ${fsArr(p.s)} }`
 ).join(',\n');
 
-const fsCode = `FeatureScript 2349;
-import(path : "onshape/std/geometry.fs", version : "2349.0");
+const fsCode = `FeatureScript 2625;
+import(path : "onshape/std/geometry.fs", version : "2625.0");
 
 // ============================================================
 // woodstock-roof Frame Generator (Onshape Custom Feature)
@@ -356,7 +356,7 @@ annotation { "Feature Type Name" : "Woodstock Frame" }
 export const woodstockFrame = defineFeature(function(context is Context, id is Id, definition is map)
     precondition
     {
-        annotation { "Name" : "生成全部 ${fsItems.length} 件零件" }
+        annotation { "Name" : "Generate all ${fsItems.length} parts" }
         definition.confirmGenerate is boolean;
     }
     {
