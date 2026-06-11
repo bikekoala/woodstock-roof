@@ -8,3 +8,11 @@
 
 # Node（如以后引入依赖）
 node_modules/
+
+# 凭证 / 密钥（绝不入仓库 — 主存储在 ~/.config/onshape/credentials.json）
+.env
+.env.*
+*credentials*
+*.secret
+*.key
+secrets/

@@ -2,6 +2,39 @@
 
 > Three.js 是快速试错沙盒，Onshape 才是**装配级真件 + 真实标准件 + 出加工图**的地方。
 
+## ⚠️ API 凭证管理（重要）
+
+**API 密钥绝不入仓库**（仓库 PUBLIC，git history 全网可见）。统一存储位置：
+
+```
+~/.config/onshape/credentials.json   ← chmod 600，HOME 目录外
+```
+
+凭证文件格式（**这个示例不含真密钥**）：
+
+```json
+{
+  "base_url":   "https://cad.onshape.com",
+  "access_key": "on_xxxxxxxxxx",
+  "secret_key": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+}
+```
+
+**生成新密钥**：[Developer Portal → API Keys → Create new key](https://dev-portal.onshape.com/keys) → 选 OAuth scope `OAuth2Read` + `OAuth2Write` → 立即下载（**Secret 只显示一次**） → 保存到上面路径 + `chmod 600`。
+
+**验证连接**：
+
+```bash
+node scripts/onshape-api-hello.js
+```
+
+应该看到 `✅ 认证成功 / 套餐 Free / 角色 DEVELOPER, USER`。
+
+**密钥泄露应急**：
+- 立刻去 [Developer Portal](https://dev-portal.onshape.com/keys) **Revoke** 旧密钥
+- 创建新密钥替换 `~/.config/onshape/credentials.json`
+- 已泄露密钥别管它（已 revoke 即失效）
+
 ## 这里有什么
 
 | 文件 | 来源 | 用途 |
@@ -46,6 +79,24 @@ Part Studio: 28 个型材实例 自动生成
 
 - AI 调 Onshape REST API：① 改参数批量更新；② 跑干涉报告；③ 生成 BOM 给 design/
 - 复用 model.js 的参数（boxHeight 改了 Onshape 自动重建）
+- 凭证管理见上面"API 凭证管理"段
+- 已有 hello world：[scripts/onshape-api-hello.js](../scripts/onshape-api-hello.js)
+
+## API 限额账（免费版 2500 请求/月）
+
+| 操作 | 大约调用次数 |
+|---|---|
+| hello world（sessioninfo + 文档列表） | 2 |
+| 一次完整 Phase 4 模型生成（28 零件 + 装配 + 干涉 + BOM） | ~50 |
+| 仅改一个参数批量更新 | ~5 |
+| **2500/月够干** | ~50 次完整生成 / 月，或 ~500 次参数调整 |
+
+**Phase 2 FeatureScript 不调 REST API**（FS 在 Onshape 内部跑，不走配额）。配额压力主要在 Phase 4。
+
+撞限怎么办：
+- 升级 Standard 套餐 ($1500/年，配额 +一大截 + 私有文档)
+- 借第二个免费账号（私人 DIY 项目临时方案）
+- Throttle：脚本里加 `await sleep(500)` 之间，减少瞬时峰值
 
 ## 跟 cad/ 的关系
 
