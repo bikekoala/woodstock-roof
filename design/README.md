@@ -10,6 +10,7 @@
 | [decisions.md](decisions.md) | 想知道"为什么"的人 | 决策记录 D1–D24，每条带理由和数字 |
 | [joints.md](joints.md) | 装配工 / 转 CAD 的人 | 59 个连接节点登记表（位置 + 角码型号 + 螺丝规格）|
 | [bom.md](bom.md) | 下单材料的人 | 物料清单（**自动生成，勿手改**）|
+| [shopping-list.md](shopping-list.md) | ★ **下单的人** | 一站式采购清单（淘宝/MISUMI 关键词 + 估价 + 总预算 ~2850 元）|
 
 ## 读的顺序
 

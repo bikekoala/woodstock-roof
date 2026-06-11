@@ -63,7 +63,7 @@
 | **想理解整体设计** | [design/spec.md](design/spec.md) |
 | **想知道为什么这样设计** | [design/decisions.md](design/decisions.md) |
 | **要在 Onshape 里建模** | [onshape/README.md](onshape/README.md) → [onshape/spec.md](onshape/spec.md) |
-| **要下单材料** | [design/bom.md](design/bom.md) + [onshape/spec.md](onshape/spec.md) §4 |
+| **要下单材料** | [design/shopping-list.md](design/shopping-list.md) ⭐ — 一站式淘宝清单 + 总预算 |
 | **要装配连接节点** | [design/joints.md](design/joints.md) |
 | **想快速看 3D 形态** | [cad/roof-rack-3d.html](cad/roof-rack-3d.html)（浏览器打开） |
 

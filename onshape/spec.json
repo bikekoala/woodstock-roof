@@ -1,7 +1,7 @@
 {
   "version": "1.0",
   "source": "cad/model.js",
-  "scriptVersion": "6bf20ff",
+  "scriptVersion": "3b44f2b",
   "params": {
     "railSpacing": 1020,
     "railLength": 1300,
