@@ -83,10 +83,20 @@ Part Studio: 36 个实体（28 型材 + 3 滑轨/合页 + 4 板 + 1 水箱）一
 
 **如果有语法错 / 几何不对**：贴 Onshape 错误日志给我，我迭代 .fs 模板。Onshape 浏览器报错信息直接显示行号 + 原因。
 
-### ⏳ Phase 3：标准件库 + 装配（人主导）
+### ⏳ Phase 3：标准件库 + 装配（部分自动化）
 
+**3.A 采购清单**：[../design/shopping-list.md](../design/shopping-list.md)（已出，含淘宝关键词 + 估价 ~2850 元）
+
+**3.B 自动 Insert Part Studio 到 Assembly**：
+```bash
+node scripts/onshape-assemble.js <documentId>
+```
+脚本：[scripts/onshape-assemble.js](../scripts/onshape-assemble.js) — 把 Part Studio 里的 36 个 Part 全部 Insert 到 Assembly 1，每个一个 instance。
+
+**3.C 手动加 Group / Mate / 标准件**（Onshape UI 里做）：
+- Cmd+A 全选 → 右键 → "Group" → 按当前位置锁定
 - 从 [McMaster-Carr](https://www.mcmaster.com) / [MISUMI VONA](https://www.misumi-ec.com) 拖角码 + 螺丝 + T 螺母（按 [spec.md §4](spec.md) 数量）
-- 在 Assembly 里按 [spec.md §3](spec.md) Mate 表逐节点加约束
+- 按 [spec.md §3](spec.md) Mate 表逐节点加约束（出工程图必做，仅看不必）
 - 跑 Onshape Interference Check（应该 0 处，model.js 已经验过）
 
 ### ✅ Phase 4 入门：API 一键上传 FS（已实现）

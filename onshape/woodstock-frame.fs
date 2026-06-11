@@ -3,7 +3,7 @@ import(path : "onshape/std/geometry.fs", version : "2625.0");
 
 // ============================================================
 // woodstock-roof Frame Generator (Onshape Custom Feature)
-// 自动从 cad/model.js 生成（commit 6bf20ff · 2026-06-11）
+// 自动从 cad/model.js 生成（commit 3b44f2b · 2026-06-11）
 // ⚠️ 不要手改本文件 — 改 cad/model.js → commit → 自动重生成
 //
 // 用法（30 秒）：
